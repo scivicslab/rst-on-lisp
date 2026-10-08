@@ -58,6 +58,17 @@ done
 
 if [ ${#TO_BUILD[@]} -eq 0 ]; then exit 0; fi
 
+# The .md about to be written is copied first. An update time is not evidence that the rule file's
+# contents changed, so a rebuild can still throw away an edit made to the .md; the copy makes that
+# recoverable without git. Copies go outside the docs tree so html-saurus never sees them.
+BACKUP=$HOME/.cache/rst-on-lisp/$(date +%Y%m%d-%H%M%S)
+for lisp in "${TO_BUILD[@]}"; do
+    md=${lisp%.lisp}.md
+    [ -f "$md" ] || continue
+    dest=$BACKUP/$(echo "${md#/}" | tr / _)
+    mkdir -p "$BACKUP" && cp -p "$md" "$dest" && echo "kept the previous $md as $dest"
+done
+
 EVALS=()
 for lisp in "${TO_BUILD[@]}"; do
     EVALS+=(--eval "(let ((n (rst:build \"$lisp\" \"${lisp%.lisp}.md\"))) (format t \"~a~@[ (~d violations)~]~%\" \"${lisp%.lisp}.md\" (and (plusp n) n)))")
