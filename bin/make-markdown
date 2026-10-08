@@ -1,0 +1,67 @@
+#!/bin/bash
+# Rebuilds every out-of-date markdown under the given roots (default: ~/works/doc_*).
+#
+#   make-markdown [-a] [root ...]
+#     -a   rebuild everything, ignoring timestamps
+#
+# A document written in rst-on-lisp is a <name>.lisp beside a <name>.md of the same base name.
+# The converter reads the rule file, checks it against the shared grammar, and writes the .md.
+# A .md is rebuilt when it is missing, or older than its .lisp or than a file the .lisp names with
+# :file. It is NEVER rebuilt while it is newer than its .lisp: a .md that someone edited by hand is
+# newer than the rule file, and overwriting it would throw that work away. Such a file is reported
+# instead. The same holds when only the grammar or the converter changed: the .md may be out of
+# date, but it is not rewritten without the rule file being touched.
+#
+# Every rule file goes through ONE ABCL session, because the JVM start-up is what the time goes into.
+# A rule file with violations leaves its .md untouched; the violations go to standard error.
+set -uo pipefail
+
+HERE=$(cd "$(dirname "$0")/.." && pwd)
+CONVERTER=$HERE/markdown.lisp
+GRAMMAR=${RST_GRAMMAR:-$HOME/works/doc_Base010/docs/rst-on-lisp/040_design/020_GrammarNotation_261006_oo01/grammar.lisp}
+ABCL=$HOME/.m2/repository/org/abcl/abcl/1.9.2/abcl-1.9.2.jar
+
+FORCE=0
+if [ "${1:-}" = "-a" ]; then FORCE=1; shift; fi
+ROOTS=("$@")
+if [ ${#ROOTS[@]} -eq 0 ]; then ROOTS=("$HOME"/works/doc_*); fi
+
+for f in "$CONVERTER" "$GRAMMAR" "$ABCL"; do
+    [ -f "$f" ] || { echo "make-markdown: $f is missing" >&2; exit 1; }
+done
+
+# static-html / build / .docusaurus are html-saurus output: the .lisp there is a copy of a source
+# file, and regenerating it would fight with the generator.
+mapfile -t LISP < <(find "${ROOTS[@]}" \
+        -type d \( -name .git -o -name node_modules -o -name build -o -name static-html \
+                   -o -name .docusaurus -o -name target \) -prune -o \
+        -type f -name '*.lisp' -print | sort)
+
+TO_BUILD=()
+for lisp in "${LISP[@]}"; do
+    md=${lisp%.lisp}.md
+    [ -f "$md" ] || continue            # a block file, not a document
+    if [ "$FORCE" = 1 ] || [ "$lisp" -nt "$md" ]; then TO_BUILD+=("$lisp"); continue; fi
+    # a file the rule file names with :file
+    stale=0
+    dir=$(dirname "$lisp")
+    while read -r name; do
+        [ -n "$name" ] && [ -f "$dir/$name" ] && [ "$dir/$name" -nt "$md" ] && { stale=1; break; }
+    done < <(grep -o ':file "[^"]*"' "$lisp" | sed 's/:file "//; s/"$//')
+    if [ "$stale" = 1 ]; then TO_BUILD+=("$lisp"); continue; fi
+    # the .md is newer than the rule file. Say so when the grammar or the converter moved on,
+    # but do not rewrite it: the newer file may hold work that is not in the rule file.
+    if [ "$GRAMMAR" -nt "$md" ] || [ "$CONVERTER" -nt "$md" ]; then
+        echo "$md is newer than its rule file; not rewritten (grammar or converter has changed since)" >&2
+    fi
+done
+
+if [ ${#TO_BUILD[@]} -eq 0 ]; then exit 0; fi
+
+EVALS=()
+for lisp in "${TO_BUILD[@]}"; do
+    EVALS+=(--eval "(let ((n (rst:build \"$lisp\" \"${lisp%.lisp}.md\"))) (format t \"~a~@[ (~d violations)~]~%\" \"${lisp%.lisp}.md\" (and (plusp n) n)))")
+done
+exec java --add-opens java.base/java.lang=ALL-UNNAMED -Dfile.encoding=UTF-8 -Dstdout.encoding=UTF-8 \
+  -jar "$ABCL" --noinform --batch --load "$CONVERTER" \
+  --eval "(rst:load-grammar \"$GRAMMAR\")" "${EVALS[@]}"
