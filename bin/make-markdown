@@ -18,7 +18,7 @@ set -uo pipefail
 
 HERE=$(cd "$(dirname "$0")/.." && pwd)
 CONVERTER=$HERE/markdown.lisp
-GRAMMAR=${RST_GRAMMAR:-$HOME/works/doc_Base010/docs/rst-on-lisp/040_design/020_GrammarNotation_261006_oo01/grammar.lisp}
+GRAMMAR=${RST_GRAMMAR:-$(cd "$(dirname "$0")/.." && pwd)/grammar.lisp}
 ABCL=$HOME/.m2/repository/org/abcl/abcl/1.9.2/abcl-1.9.2.jar
 
 FORCE=0
