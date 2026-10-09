@@ -438,6 +438,7 @@
 (defun shown-as (name) (or (cdr (assoc (label name) *shown-as* :test #'string=)) (pretty name)))
 (defparameter *fixed-heading* '("CORE-IDEA" "GOAL"))   ; 見出しが :heading でなく *shown-as* で決まるラベル
 (defparameter *unnumbered* '("ENTRY" "COMMAND" "RESOLUTION"))   ; :heading を持つが番号を付けないラベル
+(defparameter *no-heading* '("OVERVIEW"))   ; 見出しを付けずに書くラベル
 
 (defun render ()
   "文書を markdown として標準出力に書く。違反があれば標準エラー出力に印字し、何も書かずに終了状態 1 で止まる。"
@@ -461,10 +462,11 @@
   (let ((no 0))
     (dolist (n (rhs "HOW-TO-DO-IT"))
       (let ((fixed (member (label n) *fixed-heading* :test #'string=)))   ; 番号の付かない見出し
-        (cond (fixed (out "### " (shown-as n)))
-              ((member (label n) *unnumbered* :test #'string=) (out "### " (attr n :heading)))
-              (t (out (format nil "### ~d. " (incf no)) (attr n :heading)))))
-      (out) (render-section n)))
+        (cond ((member (label n) *no-heading* :test #'string=))
+              (fixed (out "### " (shown-as n)) (out))
+              ((member (label n) *unnumbered* :test #'string=) (out "### " (attr n :heading)) (out))
+              (t (out (format nil "### ~d. " (incf no)) (attr n :heading)) (out))))
+      (render-section n)))
   (when (rhs "UNDER-THE-HOOD")   ; 理由が 1 つも無ければ節ごと書かない
     (out "## Under the Hood") (out)
     (dolist (n (rhs "UNDER-THE-HOOD")) (out "### " (attr n :question)) (out) (render-section n)))
