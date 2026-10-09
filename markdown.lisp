@@ -17,8 +17,10 @@
 (defvar *doc-id* nil)
 (defvar *doc-attrs* nil)
 (defvar *dir* nil)   ; 規則ファイルの場所。:file はここから読む
-(defparameter *relations* '("ELABORATION" "EVIDENCE" "CONCESSION" "SOLUTIONHOOD" "BACKGROUND" "JUSTIFY" "CONTRAST" "SEQUENCE"))
-(defparameter *nucleus* '("NUCLEUS"))   ; 核を指す属性の名前
+;; 段落の対の属性の名前。*nucleus* が核を指す名前、*relations* がサテライトを指す名前で、後者は共有文法の
+;; (relation-name -> (or …)) が挙げる関係名である。load-grammar がそこから読んで入れる。
+(defparameter *nucleus* '("NUCLEUS"))
+(defvar *relations* '())
 (defun nucleus-key-p (k) (member k *nucleus* :test #'string=))
 (defun part-key-p (k) (let ((n (symbol-name k))) (or (nucleus-key-p n) (member n *relations* :test #'string=))))
 
@@ -30,12 +32,12 @@
   `(progn (setf *doc-id* ,(shown id) *doc-attrs* ',attrs
                 *dir* (or *load-truename* *default-pathname-defaults*)) nil))
 
-;; (defrule ラベル [名前] -> 右辺… 属性…)。名前はラベルと違うときだけ書く。右辺は名前の並びか
-;; 文字列 1 つで、無ければ未展開の非終端である。
-(defmacro defrule (label &rest more)
-  (let* ((named (not (eq (first more) '->)))
-         (name (if named (first more) label))
-         (rest (if named (rest (rest more)) (rest more)))
+;; (defrule 名前 -> 右辺… 属性…)。-> の左は名前 1 つだけである。右辺は名前の並びか文字列 1 つで、
+;; 無ければ空欄である。名前がどの非終端の規則かは、label が名前と形から決める。
+(defmacro defrule (name &rest more)
+  (unless (eq (first more) '->)
+    (error "~a: write exactly one name before ->; found ~a after it" (pretty (nm name)) (pretty (nm (first more)))))
+  (let* ((rest (rest more))
          (term (stringp (first rest)))
          (rhs (if term (first rest)
                   (loop for x in rest while (and (symbolp x) (not (keywordp x))) collect (nm x))))
@@ -43,8 +45,8 @@
     (loop for (k v) on attrs by #'cddr
           unless (keywordp k)
           do (error "~a: after the right-hand side only :key value pairs may follow; found ~s~@[ (a terminal has exactly one string)~]"
-                    (nm name) k term))
-    `(progn (setf (gethash ,(nm name) *rules*) (list ',rhs ',attrs ,term ,(nm label)))
+                    (pretty (nm name)) (if (symbolp k) (pretty (nm k)) k) term))
+    `(progn (setf (gethash ,(nm name) *rules*) (list ',rhs ',attrs ,term))
             (push ,(nm name) *order*) nil)))
 
 (defun rule (name) (or (gethash name *rules*) (error "no rule ~a" name)))
@@ -53,10 +55,10 @@
 (defun attr-str (name key) (shown (attr name key)))
 (defun terminal-p (name) (or (third (rule name)) (attr name :file)))
 (defun last-segment (name) (let ((p (position #\/ name :from-end t))) (if p (subseq name (1+ p)) name)))
-(defun label (name)   ; 明示のラベルか、無ければ名前の最後の語。末尾の数字は番号なので除く（核1 核2 -> 核）
-  (let ((l (fourth (rule name))))
-    (if (string= l name) (string-right-trim "0123456789" (last-segment name)) l)))
-(defun parts (name)   ; 書いた順の (鍵 . 相手の名前) の並び
+(defun label (name)   ; 名前の最後の語。末尾の数字は番号なので除く（step1 step2 -> step）
+  (rule name)
+  (string-right-trim "0123456789" (last-segment name)))
+(defun parts (name)   ; 書いた順の (属性の名前 . 相手の名前) の並び
   (loop for (k v) on (second (rule name)) by #'cddr when (part-key-p k) collect (cons (symbol-name k) (nm v))))
 (defun text-p (name) (and (third (rule name)) t))   ; 文の規則。右辺が文字列 1 つ
 (defun paragraph-p (name)   ; sub-paragraph。対だけを持ち、裸の名前を持たない
@@ -153,14 +155,14 @@
           ((eq (attr n :kind) 'html-block)   ; ファイルの中身を fence で囲まずそのまま書く
            (out (file-text (attr-str n :file))) (out))
           ((paragraph-p n) (render-paragraph n))
-          ((eq (attr n :kind) '表)
+          ((eq (attr n :kind) 'table)
            (let ((rows (mapcar (lambda (r) (split-cells (rhs r))) (rhs n))))
              (out "| " (format nil "~{~a~^ | ~}" (first rows)) " |")
              (out "|" (format nil "~{~a~^|~}" (mapcar (lambda (c) (declare (ignore c)) "---") (first rows))) "|")
              (dolist (r (rest rows)) (out "| " (format nil "~{~a~^ | ~}" r) " |"))
              (out)))
-          ((member (attr n :kind) '(印 番号))
-           (let ((num (eq (attr n :kind) '番号)) (k 0))
+          ((member (attr n :kind) '(bullet number))
+           (let ((num (eq (attr n :kind) 'number)) (k 0))
              (dolist (it (rhs n)) (incf k)
                (let* ((lead (if num (format nil "~d. " k) "- "))
                       (ls (wrap (rhs it) (- *width* (swidth lead)) (if num "   " "  "))))
@@ -174,10 +176,14 @@
 ;; ---- 木の検査 ----
 ;; 根と front matter（title・description）を除く全ての規則は、親の核（:rel 無し）か、
 ;; :rel と :of を持つ衛星か、兄弟全部が同じ多核の関係（列挙・順序・対比）を持つかのどれかである。
+(defvar *blanks* '())   ; 照合で見つけた空欄の名前
+
 (defun check (&optional (stream *standard-output*))
-  "文法との照合と、段落の中の関係を調べ、違反の行と件数を stream に印字して件数を返す。
+  "文法との照合と、段落の中の関係を調べ、違反の行と件数を stream に印字する。続けて空欄の一覧と件数を
+   印字する。違反の数と空欄の数を 2 つの値で返す。
    節と節の間の関係は文法が形として書いているので調べない。
-   段落は、部分を書いた順の (:鍵 相手) の対で持つ。鍵 :nucleus が核で、ちょうど 1 つある。"
+   段落は、部分を書いた順の (:属性の名前 相手) の対で持つ。:nucleus の相手が核で、ちょうど 1 つある。"
+  (setf *blanks* '())
   (let ((n 0))
     (flet ((report (fmt &rest args) (incf n) (apply #'format stream fmt args) (terpri stream)))
       (when (plusp (hash-table-count *grammar*)) (check-grammar #'report))
@@ -190,7 +196,13 @@
                     ((string= (cdr pr) name)
                      (report "~a: ~a: :~a points at itself" *doc-id* (pretty name) (pretty (car pr))))))))))
     (format stream "~d violations~%" n)
-    n))
+    (let ((blanks (reverse *blanks*)))
+      (dolist (b blanks)
+        (format stream "~a: blank ~a~@[: ~a~]~%" *doc-id*
+                (pretty b)
+                (attr b :instruction)))
+      (when blanks (format stream "~d blanks~%" (length blanks)))
+      (values n (length blanks)))))
 
 
 ;; ---- 文法 ----
@@ -201,6 +213,12 @@
 (defun item (x)   ; 読んだ項を、名前は文字列に、(+ x) などは (op 項) にする
   (if (consp x) (cons (nm (first x)) (mapcar #'item (rest x))) (nm x)))
 
+(defun relation-names ()   ; 共有文法の (relation-name -> (or …)) が挙げる関係名の全部
+  (let ((p (production "RELATION-NAME")))
+    (unless (and p (= 1 (length (first p))) (op-p (first (first p)) "or"))
+      (error "the shared grammar has no (relation-name -> (or ...)) production"))
+    (mapcar #'nm (rest (first (first p))))))
+
 (defun load-grammar (path)
   (clrhash *grammar*)
   (with-open-file (in path :external-format :utf-8)
@@ -210,6 +228,7 @@
                     (items (loop for x in body until (keywordp x) collect (item x)))
                     (attrs (nthcdr (length items) body)))
                (setf (gethash lhs *grammar*) (list items attrs)))))
+  (setf *relations* (relation-names))
   (hash-table-count *grammar*))
 
 (defun production (lhs) (gethash lhs *grammar*))
@@ -221,19 +240,43 @@
     (and p (null (second p)) (= (length (first p)) 1) (stringp (first (first p))) (production (first (first p)))
          (first (first p)))))
 
+;; 空欄は、書き手が LLM に書き足してほしい場所として残した、右辺の無い規則である。
+;; 右辺も対も :kind も無く、文法がその非終端に子か対を求めるものを空欄とする。:instruction と :source は
+;; 書かれていれば LLM への補足で、無くてもよい。ラベルが文法に無い空欄は、何の非終端になるかがまだ決まって
+;; いない。そう扱うのは、名前の最後の語が番号だけのもの（known/2）と、段落の対の相手（known/1/evidence）だけで、
+;; それ以外の文法に無い名前（summary など）は、文法に無い非終端として違反にする。
+(defparameter *blank-kind* "?BLANK")   ; ラベルの無い空欄の種類。文法のどの名前にも当たる
+(defparameter *note-keys* '("INSTRUCTION" "SOURCE"))   ; 文法の属性の照合から外す、LLM への補足
+(defun blank-shape-p (name)
+  (and (not (terminal-p name)) (null (rhs name)) (null (parts name)) (null (attr name :kind))))
+(defun partner-p (name)   ; どこかの段落の対の相手になっているか
+  (loop for other being the hash-keys of *rules*
+        thereis (find name (parts other) :key #'cdr :test #'string=)))
+(defun undetermined-p (name)
+  (and (blank-shape-p name) (not (production (label name)))
+       (or (string= (label name) "") (partner-p name))))
+(defun blank-p (name)
+  (and (blank-shape-p name)
+       (let ((k (kind name)))
+         (or (string= k *blank-kind*)
+             (progn (loop while (alias-p k) do (setf k (alias-p k)))
+                    (let ((p (production k)))
+                      (and p (or (string= k "SUB-PARAGRAPH") (not (match (first p) '()))))))))))
+
 (defun kind (name)   ; この規則が文法のどの非終端か。ラベルがそれで、無ければ形から決める
   (let ((l (label name)))
     (cond ((production l) l)
+          ((undetermined-p name) *blank-kind*)
           ((eq (attr name :kind) 'code-block) "CODE-BLOCK")
           ((eq (attr name :kind) 'html-block) "HTML-BLOCK")
-          ((member (attr name :kind) '(印 番号)) "LIST")
-          ((eq (attr name :kind) '表) "TABLE")
+          ((member (attr name :kind) '(bullet number)) "LIST")
+          ((eq (attr name :kind) 'table) "TABLE")
           ((paragraph-p name) "SUB-PARAGRAPH")
-          ((terminal-p name) "文字列")
+          ((terminal-p name) "STRING")
           (t l))))
 
 (defun matches (sym k)   ; 文法の名前 sym に、種類 k の子を当てられるか
-  (or (string= sym k)
+  (or (string= sym k) (string= k *blank-kind*)
       (let ((p (production sym)))
         (and p (null (second p))
              (some (lambda (alt) (and (= (length alt) 1)
@@ -262,9 +305,14 @@
 
 (defun show-items (items)
   (format nil "~{~a~^ ~}" (mapcar (lambda (it) (if (stringp it) (pretty it) (format nil "(~a ~a)" (pretty (first it)) (show-items (rest it))))) items)))
+(defun show-production (k)   ; 生成規則 1 行を、項と属性を含めて文法に書いたとおりに見せる
+  (let ((p (production k)))
+    (format nil "~a ->~@[ ~a~]~{ ~a~}" (pretty k) (and (first p) (show-items (first p)))
+            (mapcar (lambda (x) (cond ((keywordp x) (show-key x)) ((consp x) (format nil "~(~s~)" x)) (t (pretty (nm x)))))
+                    (second p)))))
 (defun show-key (key) (concatenate 'string ":" (pretty (symbol-name key))))
 
-(defun attr-decls (attrs)   ; 属性の宣言を (個数 鍵 値) の並びにする。(* :key 値) は 0 個以上
+(defun attr-decls (attrs)   ; 属性の宣言を (個数 属性の名前 値) の並びにする。(* :key 値) は 0 個以上
   (let ((out '()) (rest attrs))
     (loop while rest do
       (let ((x (pop rest)))
@@ -273,7 +321,7 @@
             (push (list "1" x (pop rest)) out))))
     (nreverse out)))
 
-(defun key-set (key)   ; 鍵が非終端の名前なら、その非終端が挙げる鍵の集まり。でなければその鍵 1 つ
+(defun key-set (key)   ; 属性の名前が非終端の名前なら、その非終端が挙げる名前の集まり。でなければその名前 1 つ
   (let ((p (production (symbol-name key))))
     (if (and p (null (second p)) (= 1 (length (first p))) (op-p (first (first p)) "or"))
         (rest (first (first p)))
@@ -284,20 +332,22 @@
          (unless (member (shown v) (mapcar #'shown (rest spec)) :test #'string=)
            (funcall report "~a: ~a: ~a must be one of ~{~a~^ ~}" *doc-id* (pretty name) (show-key key) (mapcar #'shown (rest spec)))))
         ((and (symbolp v) (string= (shown v) (shown spec))))   ; :kind code-block のような記号そのもの
+        ((and (production (nm spec)) (not (gethash (nm v) *rules*))))   ; 規則の無い相手は check が報告する
         ((production (nm spec))
          (unless (matches (nm spec) (kind (nm v)))
            (funcall report "~a: ~a: ~a ~a is not a ~a" *doc-id* (pretty name) (show-key key) (pretty (nm v)) (pretty (nm spec)))))
-        ((member (nm spec) '("文字列" "ファイル名") :test #'string=)
+        ((member (nm spec) '("STRING" "FILE-NAME") :test #'string=)
          (unless (stringp v) (funcall report "~a: ~a: ~a must be a string" *doc-id* (pretty name) (show-key key))))
-        ((string= (nm spec) "必須"))
+        ((string= (nm spec) "REQUIRED"))
         (t (unless (string= (shown v) (shown spec))
              (funcall report "~a: ~a: ~a must be ~a" *doc-id* (pretty name) (show-key key) (shown spec))))))
 
 (defun check-attrs (name attrs report)
-  "宣言された属性 1 つごとに、その鍵が書かれた回数を個数と照らし、値の種類を照らす。
-   宣言のどれにも当たらない鍵は、文法に無い属性として報告する。"
+  "宣言された属性 1 つごとに、その属性の名前が書かれた回数を個数と照らし、値の種類を照らす。
+   宣言のどれにも当たらない属性の名前は、文法に無い属性として報告する。"
   (let ((decls (attr-decls attrs))
-        (written (loop for (k v) on (second (rule name)) by #'cddr collect (cons k v))))
+        (written (loop for (k v) on (second (rule name)) by #'cddr
+                       unless (member (symbol-name k) *note-keys* :test #'string=) collect (cons k v))))
     (dolist (d decls)
       (destructuring-bind (n key spec) d
         (let* ((keys (key-set key))
@@ -317,76 +367,110 @@
         (unless (member (symbol-name (car kv)) allowed :test #'string=)
           (funcall report "~a: ~a: ~a is not an attribute of ~a" *doc-id* (pretty name) (show-key (car kv)) (pretty (kind name))))))))
 
+;; 生成規則が (or A B …) の選択肢だけのとき、ラベルで選ばなくても、子の並びに合う選択肢がちょうど 1 つなら
+;; それを非終端とする。how-to-do-it の節の型は、子の名前（goal と step、finding と resolution など）で決まる。
+(defun choice (k name)
+  (let ((p (production k)))
+    (when (and p (null (second p)) (= 1 (length (first p))) (op-p (first (first p)) "or")
+               (rhs name) (not (terminal-p name)))
+      (let* ((kinds (mapcar #'kind (rhs name)))
+             (hits (remove-if-not (lambda (a) (and (stringp a) (production a) (null (alias-p a))
+                                                    (match (first (production a)) kinds)))
+                                  (rest (first (first p))))))
+        (when (= 1 (length hits)) (first hits))))))
+
+(defun shown-kind (k kid)   ; 違反の行に出す子の種類。未定の空欄は、種類の代わりに名前を見せる
+  (pretty (if (string= k *blank-kind*) kid k)))
+
 (defun check-rule (name report)
   (let* ((k (kind name)) (p (production k)))
-    (cond ((string= k "文字列"))   ; 名前だけの終端（箇条書きの項目）。親の規則が item -> 文字列 で照合する
+    (cond ((string= k "STRING"))   ; 名前だけの終端（箇条書きの項目）。親の規則が item -> string で照合する
           ((null p) (funcall report "~a: ~a: ~a is not in the grammar" *doc-id* (pretty name) (pretty k)))
-          (t (loop while (alias-p k) do (setf k (alias-p k)))   ; 既知 -> paragraph のような代用を辿る
+          (t (loop while (alias-p k) do (setf k (alias-p k)))   ; preconditions -> list のような代用を辿る
+             (let ((c (choice k name))) (when c (setf k c)))   ; how-to-do-it のような選択肢の集まり
              (let* ((p (production k)) (items (first p)) (attrs (second p))
                     (string-p (third (rule name)))   ; 右辺が文字列 1 つ
                     (kids (if (terminal-p name) '() (rhs name)))
-                    ;; 文字列の塊は、文字列という種類の子 1 つを持つものとして照合する
-                    (kinds (if string-p '("文字列") (mapcar #'kind kids)))
-                    (shown-name (pretty (if (string= (label name) name) name (format nil "~a ~a" (label name) name))))
-                    (string-rule (equal items '("文字列")))
+                    ;; 文の規則は、string という種類の子 1 つを持つものとして照合する
+                    (kinds (if string-p '("STRING") (mapcar #'kind kids)))
+                    (shown-name (pretty name))
+                    (string-rule (equal items '("STRING")))
                     (unexpanded (and (null kids) (not (terminal-p name)) (not (match items '())))))
                (cond ((and string-rule (not (terminal-p name)))
-                      (funcall report "~a: ~a: not a terminal (~a -> 文字列)" *doc-id* shown-name (pretty k)))
+                      (funcall report "~a: ~a: not a terminal (~a -> string)" *doc-id* shown-name (pretty k)))
                      (unexpanded
                       (funcall report "~a: ~a: not expanded (~a -> ~a)" *doc-id* shown-name (pretty k) (show-items items)))
+                     ((and (not (match items kinds)) (not string-p) kids
+                           (= 1 (length items)) (op-p (first items) "or") (null attrs))
+                      ;; 選択肢の集まりで、子の並びに合う選択肢が無い
+                      (funcall report "~a: ~a: children (~{~a~^ ~}) match none of ~{~a~^ ~}" *doc-id* shown-name
+                               (mapcar #'shown-kind kinds kids) (mapcar #'pretty (rest (first items)))))
                      ((not (match items kinds))
                       (let ((bad (and (not string-p)
                                       (find-if-not (lambda (x) (some (lambda (s) (matches s x)) (names-in items))) kinds))))
                         (if string-p
-                            (funcall report "~a: ~a: a string where ~a -> ~a is expected" *doc-id* shown-name (pretty k) (show-items items))
+                            (funcall report "~a: ~a: a string where (~a) is expected" *doc-id* shown-name (show-production k))
                         (if bad
                             (funcall report "~a: ~a: ~a is not in the production (~a -> ~a)" *doc-id* shown-name
                                      (pretty (nth (position bad kinds) kids)) (pretty k) (show-items items))
                             (funcall report "~a: ~a: children (~{~a~^ ~}) do not match (~a -> ~a)" *doc-id* shown-name
-                                     (mapcar #'pretty kinds) (pretty k) (show-items items)))))))
+                                     (mapcar #'shown-kind kinds kids) (pretty k) (show-items items)))))))
                (unless unexpanded (check-attrs name attrs report)))))))
 
 (defun check-grammar (report)
   (dolist (name (reverse *order*))
     (let ((missing (and (not (terminal-p name))
                         (remove-if (lambda (k) (gethash k *rules*)) (rhs name)))))
-      (if missing
-          (funcall report "~a: ~a: no rule for ~{~a~^ ~} named in the right-hand side" *doc-id* (pretty name) (mapcar #'pretty missing))
-          (check-rule name report)))))
+      (cond (missing
+             (funcall report "~a: ~a: no rule for ~{~a~^ ~} named in the right-hand side" *doc-id* (pretty name) (mapcar #'pretty missing)))
+            ((and (text-p name) (string= (rhs name) ""))
+             (funcall report "~a: ~a: empty string; to leave a blank, write the rule with no right-hand side" *doc-id* (pretty name)))
+            ((blank-p name) (push name *blanks*))
+            (t (check-rule name report))))))
 
-(defparameter *fixed-headings* '(("アイディア" . "コアのアイディア") ("目標" . "到達する状態")))
-(defparameter *unnumbered* '("項目" "コマンド" "対処"))   ; :heading を持つが番号を付けないラベル
+;; 節点の名前は英語なので、markdown に出す日本語をここで決める。左が共有文法の非終端の名前である。
+;; 前提条件と達成状態・前提条件・達成状態は本文に出る語、コアのアイディア・到達する状態は節の見出しである。
+(defparameter *shown-as* '(("PRECONDITIONS-AND-POSTCONDITIONS" . "前提条件と達成状態")
+                           ("PRECONDITIONS" . "前提条件")
+                           ("POSTCONDITIONS" . "達成状態")
+                           ("CORE-IDEA" . "コアのアイディア")
+                           ("GOAL" . "到達する状態")))
+(defun shown-as (name) (or (cdr (assoc (label name) *shown-as* :test #'string=)) (pretty name)))
+(defparameter *fixed-heading* '("CORE-IDEA" "GOAL"))   ; 見出しが :heading でなく *shown-as* で決まるラベル
+(defparameter *unnumbered* '("ENTRY" "COMMAND" "RESOLUTION"))   ; :heading を持つが番号を付けないラベル
 
 (defun render ()
   "文書を markdown として標準出力に書く。違反があれば標準エラー出力に印字し、何も書かずに終了状態 1 で止まる。"
-  (let* ((out (make-string-output-stream)) (n (check out)))
-    (when (plusp n)
-      (stderr (get-output-stream-string out))
-      (stderr "render refused: fix the violations above first")
+  (multiple-value-bind (n blanks) (check (make-string-output-stream))
+    (when (or (plusp n) (plusp blanks))
+      (let ((out (make-string-output-stream)))
+        (check out)
+        (stderr (get-output-stream-string out)))
+      (stderr "render refused: fix the violations and fill the blanks above first")
       (ext:quit :status 1)))
   (out "---") (out "id: " *doc-id*) (out "title: " (rhs "TITLE")) (out "description: |")
   (dolist (l (wrap (rhs "DESCRIPTION") 108)) (out "  " l)) (out "---") (out)
   (out "## Problem Definition") (out)
-  (dolist (n (rhs "問題提起"))
-    (cond ((string= n "前提条件と達成状態")
-           (out "### 前提条件と達成状態") (out)
-           (dolist (g (rhs n)) (out g) (out) (render-body (list g))))
-          ((string= n "用語定義") (out "### " (attr n :heading)) (out) (render-body (rhs n)))
+  (dolist (n (rhs "PROBLEM-DEFINITION"))
+    (cond ((string= n "PRECONDITIONS-AND-POSTCONDITIONS")
+           (out "### " (shown-as n)) (out)
+           (dolist (g (rhs n)) (out (shown-as g)) (out) (render-body (list g))))
+          ((string= n "TERMS") (out "### " (attr n :heading)) (out) (render-body (rhs n)))
           (t (render-section n))))
   (out "## How to do it") (out)
   (let ((no 0))
-    (dolist (n (rhs "HOW"))
-      (let ((fixed (cdr (assoc (label n) *fixed-headings* :test #'string=))))   ; 番号の付かない見出し
-        (cond (fixed (out "### " fixed))
+    (dolist (n (rhs "HOW-TO-DO-IT"))
+      (let ((fixed (member (label n) *fixed-heading* :test #'string=)))   ; 番号の付かない見出し
+        (cond (fixed (out "### " (shown-as n)))
               ((member (label n) *unnumbered* :test #'string=) (out "### " (attr n :heading)))
               (t (out (format nil "### ~d. " (incf no)) (attr n :heading)))))
       (out) (render-section n)))
   (when (rhs "UNDER-THE-HOOD")   ; 理由が 1 つも無ければ節ごと書かない
     (out "## Under the Hood") (out)
-    (dolist (n (rhs "UNDER-THE-HOOD")) (out "### " (attr n :問い)) (out) (render-section n)))
-  (when (rhs "REFERENCES")   ; 参照が 1 つも無ければ節ごと書かない
+    (dolist (n (rhs "UNDER-THE-HOOD")) (out "### " (attr n :question)) (out) (render-section n)))
+  (when (rhs "RELATED-DOCS")   ; 参照が 1 つも無ければ節ごと書かない
     (out "## 参考資料") (out) (out "<ul>")
-    (dolist (n (rhs "REFERENCES"))
+    (dolist (n (rhs "RELATED-DOCS"))
       (out "<li><span data-doc-id=\"" (attr-str n :doc) "\" data-relation=\"" (attr-str n :relation) "\">" (rhs n) "</span></li>"))
     (out "</ul>")))
 
@@ -396,18 +480,18 @@
   (clrhash *rules*) (setf *order* '() *doc-id* nil *doc-attrs* nil *dir* nil)
   nil)
 
-;; 規則ファイル 1 本を読み、検査して、markdown を書き出す。違反があれば書かずに違反の数を返す。
-;; 文法は呼ぶ側が load-grammar で読んでおく。
+;; 規則ファイル 1 本を読み、検査して、markdown を書き出す。違反か空欄があれば書かない。
+;; 違反の数と空欄の数を 2 つの値で返す。文法は呼ぶ側が load-grammar で読んでおく。
 (defun build (lisp-path md-path)
   (reset)
   (load lisp-path)
-  (let* ((out (make-string-output-stream))
-         (n (check out)))
-    (if (plusp n)
-        (progn (stderr (format nil "~a" lisp-path))
-               (stderr (get-output-stream-string out))
-               n)
-        (with-open-file (s md-path :direction :output :if-exists :supersede
-                                   :if-does-not-exist :create :external-format :utf-8)
-          (let ((*standard-output* s)) (render))
-          0))))
+  (let ((out (make-string-output-stream)))
+    (multiple-value-bind (n blanks) (check out)
+      (if (or (plusp n) (plusp blanks))
+          (progn (stderr (format nil "~a" lisp-path))
+                 (stderr (get-output-stream-string out))
+                 (values n blanks))
+          (with-open-file (s md-path :direction :output :if-exists :supersede
+                                     :if-does-not-exist :create :external-format :utf-8)
+            (let ((*standard-output* s)) (render))
+            (values 0 0))))))

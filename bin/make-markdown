@@ -13,7 +13,7 @@
 # date, but it is not rewritten without the rule file being touched.
 #
 # Every rule file goes through ONE ABCL session, because the JVM start-up is what the time goes into.
-# A rule file with violations leaves its .md untouched; the violations go to standard error.
+# A rule file with violations or blanks leaves its .md untouched; both go to standard error.
 set -uo pipefail
 
 HERE=$(cd "$(dirname "$0")/.." && pwd)
@@ -71,7 +71,7 @@ done
 
 EVALS=()
 for lisp in "${TO_BUILD[@]}"; do
-    EVALS+=(--eval "(let ((n (rst:build \"$lisp\" \"${lisp%.lisp}.md\"))) (format t \"~a~@[ (~d violations)~]~%\" \"${lisp%.lisp}.md\" (and (plusp n) n)))")
+    EVALS+=(--eval "(multiple-value-bind (n b) (rst:build \"$lisp\" \"${lisp%.lisp}.md\") (format t \"~a~@[ (~d violations)~]~@[ (~d blanks)~]~%\" \"${lisp%.lisp}.md\" (and (plusp n) n) (and (plusp b) b)))")
 done
 exec java --add-opens java.base/java.lang=ALL-UNNAMED -Dfile.encoding=UTF-8 -Dstdout.encoding=UTF-8 \
   -jar "$ABCL" --noinform --batch --load "$CONVERTER" \
