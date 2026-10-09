@@ -37,10 +37,26 @@ mapfile -t LISP < <(find "${ROOTS[@]}" \
                    -o -name .docusaurus -o -name target \) -prune -o \
         -type f -name '*.lisp' -print | sort)
 
+# Every .md this script writes has its sha256 recorded here. Before a .md is rewritten, its current
+# sha256 must equal the record: then the file is exactly what this script wrote last time. A .md that
+# differs was edited by hand (or was never written by this script), and is NEVER rewritten, whatever
+# the update times say: update times change when anyone touches the rule file, so they cannot tell
+# a hand-edited .md from a stale one.
+STATE=$HOME/.cache/rst-on-lisp/generated
+key() { printf '%s' "$1" | sha256sum | cut -c1-32; }
+recorded() { cat "$STATE/$(key "$1")" 2>/dev/null; }
+digest() { sha256sum "$1" | cut -c1-64; }
+
 TO_BUILD=()
 for lisp in "${LISP[@]}"; do
     md=${lisp%.lisp}.md
-    [ -f "$md" ] || continue            # a block file, not a document
+    [ -f "$md" ] || continue            # a block file, not a document. An empty .md is rewritten (see below)
+    if [ -s "$md" ] && [ "$(digest "$md")" != "$(recorded "$md")" ]; then
+        if [ "$FORCE" = 1 ] || [ "$lisp" -nt "$md" ]; then
+            echo "$md was edited by hand or not written by make-markdown; not rewritten. Move the edits into the .lisp, then empty the .md (: > file.md) to let it be regenerated" >&2
+        fi
+        continue
+    fi
     if [ "$FORCE" = 1 ] || [ "$lisp" -nt "$md" ]; then TO_BUILD+=("$lisp"); continue; fi
     # a file the rule file names with :file
     stale=0
@@ -73,6 +89,15 @@ EVALS=()
 for lisp in "${TO_BUILD[@]}"; do
     EVALS+=(--eval "(multiple-value-bind (n b) (rst:build \"$lisp\" \"${lisp%.lisp}.md\") (format t \"~a~@[ (~d violations)~]~@[ (~d blanks)~]~%\" \"${lisp%.lisp}.md\" (and (plusp n) n) (and (plusp b) b)))")
 done
-exec java --add-opens java.base/java.lang=ALL-UNNAMED -Dfile.encoding=UTF-8 -Dstdout.encoding=UTF-8 \
+START=$(mktemp)
+java --add-opens java.base/java.lang=ALL-UNNAMED -Dfile.encoding=UTF-8 -Dstdout.encoding=UTF-8 \
   -jar "$ABCL" --noinform --batch --load "$CONVERTER" \
   --eval "(rst:load-grammar \"$GRAMMAR\")" "${EVALS[@]}"
+status=$?
+mkdir -p "$STATE"
+for lisp in "${TO_BUILD[@]}"; do
+    md=${lisp%.lisp}.md
+    [ -f "$md" ] && [ "$md" -nt "$START" ] && digest "$md" > "$STATE/$(key "$md")"
+done
+rm -f "$START"
+exit $status
