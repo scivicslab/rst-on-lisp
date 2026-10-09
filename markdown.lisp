@@ -33,7 +33,7 @@
                 *dir* (or *load-truename* *default-pathname-defaults*)) nil))
 
 ;; (defrule 名前 -> 右辺… 属性…)。-> の左は名前 1 つだけである。右辺は名前の並びか文字列 1 つで、
-;; 無ければ空欄である。名前がどの非終端の規則かは、label が名前と形から決める。
+;; 無ければ空欄である。名前がどの非終端記号の規則かは、label が名前と形から決める。
 (defmacro defrule (name &rest more)
   (unless (eq (first more) '->)
     (error "~a: write exactly one name before ->; found ~a after it" (pretty (nm name)) (pretty (nm (first more)))))
@@ -280,10 +280,10 @@
          (first (first p)))))
 
 ;; 空欄は、書き手が LLM に書き足してほしい場所として残した、右辺の無い規則である。
-;; 右辺も対も :kind も無く、文法がその非終端に子か対を求めるものを空欄とする。:instruction と :source は
-;; 書かれていれば LLM への補足で、無くてもよい。ラベルが文法に無い空欄は、何の非終端になるかがまだ決まって
+;; 右辺も対も :kind も無く、文法がその非終端記号に子か対を求めるものを空欄とする。:instruction と :source は
+;; 書かれていれば LLM への補足で、無くてもよい。ラベルが文法に無い空欄は、何の非終端記号になるかがまだ決まって
 ;; いない。そう扱うのは、名前の最後の語が番号だけのもの（known/2）と、段落の対の相手（known/1/evidence）だけで、
-;; それ以外の文法に無い名前（summary など）は、文法に無い非終端として違反にする。
+;; それ以外の文法に無い名前（summary など）は、文法に無い非終端記号として違反にする。
 (defparameter *blank-kind* "?BLANK")   ; ラベルの無い空欄の種類。文法のどの名前にも当たる
 (defparameter *note-keys* '("INSTRUCTION" "SOURCE"))   ; 文法の属性の照合から外す、LLM への補足
 (defun blank-shape-p (name)
@@ -302,7 +302,7 @@
                     (let ((p (production k)))
                       (and p (or (string= k "SUB-PARAGRAPH") (not (match (first p) '()))))))))))
 
-(defun kind (name)   ; この規則が文法のどの非終端か。ラベルがそれで、無ければ形から決める
+(defun kind (name)   ; この規則が文法のどの非終端記号か。ラベルがそれで、無ければ形から決める
   (let ((l (label name)))
     (cond ((production l) l)
           ((undetermined-p name) *blank-kind*)
@@ -346,7 +346,7 @@
 
 (defun show-items (items)
   (format nil "~{~a~^ ~}" (mapcar (lambda (it) (if (stringp it) (pretty it) (format nil "(~a ~a)" (pretty (first it)) (show-items (rest it))))) items)))
-(defun show-production (k)   ; 生成規則 1 行を、項と属性を含めて文法に書いたとおりに見せる
+(defun show-production (k)   ; 生成式 1 行を、項と属性を含めて文法に書いたとおりに見せる
   (let ((p (production k)))
     (format nil "~a ->~@[ ~a~]~{ ~a~}" (pretty k) (and (first p) (show-items (first p)))
             (mapcar (lambda (x) (cond ((keywordp x) (show-key x)) ((consp x) (format nil "~(~s~)" x)) (t (pretty (nm x)))))
@@ -362,7 +362,7 @@
             (push (list "1" x (pop rest)) out))))
     (nreverse out)))
 
-(defun key-set (key)   ; 属性の名前が非終端の名前なら、その非終端が挙げる名前の集まり。でなければその名前 1 つ
+(defun key-set (key)   ; 属性の名前が非終端記号の名前なら、その非終端記号が挙げる名前の集まり。でなければその名前 1 つ
   (let ((p (production (symbol-name key))))
     (if (and p (null (second p)) (= 1 (length (first p))) (op-p (first (first p)) "or"))
         (rest (first (first p)))
@@ -408,8 +408,8 @@
         (unless (member (symbol-name (car kv)) allowed :test #'string=)
           (funcall report "~a: ~a: ~a is not an attribute of ~a" *doc-id* (pretty name) (show-key (car kv)) (pretty (kind name))))))))
 
-;; 生成規則が (or A B …) の選択肢だけのとき、ラベルで選ばなくても、子の並びに合う選択肢がちょうど 1 つなら
-;; それを非終端とする。how-to-do-it の節の型は、子の名前（goal と step、finding と resolution など）で決まる。
+;; 生成式が (or A B …) の代替だけのとき、ラベルで選ばなくても、子の並びに合う代替がちょうど 1 つなら
+;; それを非終端記号とする。how-to-do-it の節の型は、子の名前（goal と step、finding と resolution など）で決まる。
 (defun choice (k name)
   (let ((p (production k)))
     (when (and p (null (rhs name)) (parts name) (op-p (first (first p)) "or")
@@ -428,10 +428,10 @@
 
 (defun check-rule (name report)
   (let* ((k (kind name)) (p (production k)))
-    (cond ((string= k "STRING"))   ; 名前だけの終端（箇条書きの項目）。親の規則が item -> string で照合する
+    (cond ((string= k "STRING"))   ; 名前だけの終端記号（箇条書きの項目）。親の規則が item -> string で照合する
           ((null p) (funcall report "~a: ~a: ~a is not in the grammar" *doc-id* (pretty name) (pretty k)))
           (t (loop while (alias-p k) do (setf k (alias-p k)))   ; preconditions -> list のような代用を辿る
-             (let ((c (choice k name))) (when c (setf k c)))   ; how-to-do-it のような選択肢の集まり
+             (let ((c (choice k name))) (when c (setf k c)))   ; how-to-do-it のような代替の集まり
              (let* ((p (production k)) (items (first p)) (attrs (second p))
                     (string-p (third (rule name)))   ; 右辺が文字列 1 つ
                     (kids (if (terminal-p name) '() (rhs name)))
@@ -446,7 +446,7 @@
                       (funcall report "~a: ~a: not expanded (~a -> ~a)" *doc-id* shown-name (pretty k) (show-items items)))
                      ((and (not (match items kinds)) (not string-p) kids
                            (= 1 (length items)) (op-p (first items) "or") (null attrs))
-                      ;; 選択肢の集まりで、子の並びに合う選択肢が無い
+                      ;; 代替の集まりで、子の並びに合う代替が無い
                       (funcall report "~a: ~a: children (~{~a~^ ~}) match none of ~{~a~^ ~}" *doc-id* shown-name
                                (mapcar #'shown-kind kinds kids) (mapcar #'pretty (rest (first items)))))
                      ((not (match items kinds))
@@ -472,7 +472,7 @@
             ((blank-p name) (push name *blanks*))
             (t (check-rule name report))))))
 
-;; 節点の名前は英語なので、markdown に出す日本語をここで決める。左が共有文法の非終端の名前である。
+;; 節点の名前は英語なので、markdown に出す日本語をここで決める。左が共有文法の非終端記号の名前である。
 ;; 前提条件と達成状態・前提条件・達成状態は本文に出る語、コアのアイディア・到達する状態は節の見出しである。
 (defparameter *shown-as* '(("PRECONDITIONS-AND-POSTCONDITIONS" . "前提条件と達成状態")
                            ("PRECONDITIONS" . "前提条件")
