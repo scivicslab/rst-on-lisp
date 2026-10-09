@@ -4,7 +4,7 @@
 ;; GrammarAndDerivation_261006_oo01 のような名前を、書いたとおりに出すため。
 (setf (readtable-case *readtable*) :invert)
 
-(defpackage :rst (:use :cl) (:export :defrule :defdocument :render :check :load-grammar :reset :build))
+(defpackage :rst (:use :cl) (:export :defrule :defdocument :render :check :verify :load-grammar :reset :build))
 (in-package :rst)
 
 ;; ABCL の *error-output* は標準出力と同じ所へ出るので、標準エラー出力には Java の System.err で書く
@@ -242,6 +242,13 @@
       (when blanks (format stream "~d blanks~%" (length blanks)))
       (values n (length blanks)))))
 
+
+(defun verify ()
+  "check と同じものを標準出力に印字し、結果を終了状態で返して終わる。
+   0 は違反も空欄も無い、1 は違反がある、2 は違反が無く空欄がある。"
+  (multiple-value-bind (n blanks) (check)
+    (finish-output)
+    (ext:quit :status (cond ((plusp n) 1) ((plusp blanks) 2) (t 0)))))
 
 ;; ---- 文法 ----
 ;; 文法ファイルの 1 行 (lhs -> 項… :key 値…) を読む。項は名前、(+ x)、(* x)、(? x)、(or x…)。
