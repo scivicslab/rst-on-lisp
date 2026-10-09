@@ -67,12 +67,12 @@
 
 (defun render-paragraph (name)
   "段落の部分を書いた順に見る。文は連結して 1 つの散文にし、箇条書き・コードブロック・表はそこで
-   散文を区切ってその形で書く。相手が段落なら、その中の部分を同じ散文に続けて連結する。"
+   散文を区切ってその形で書く。相手が段落なら、そこで散文を区切り、その段落を別の段落として書く。"
   (let ((run '()))
     (labels ((flush () (when run (out-wrapped (apply #'concatenate 'string (nreverse run))) (out) (setf run '())))
              (walk (node)
                (cond ((text-p node) (push (rhs node) run))
-                     ((paragraph-p node) (dolist (pr (parts node)) (walk (cdr pr))))
+                     ((paragraph-p node) (flush) (render-paragraph node))
                      (t (flush) (render-body (list node))))))
       (dolist (pr (parts name)) (walk (cdr pr)))
       (flush))))
@@ -452,6 +452,7 @@
   (out "---") (out "id: " *doc-id*) (out "title: " (rhs "TITLE")) (out "description: |")
   (dolist (l (wrap (rhs "DESCRIPTION") 108)) (out "  " l)) (out "---") (out)
   (out "## Problem Definition") (out)
+  (render-paragraph "PROBLEM-DEFINITION")   ; 意味構造の対。形式的構造の部分はその後ろ
   (dolist (n (rhs "PROBLEM-DEFINITION"))
     (cond ((string= n "PRECONDITIONS-AND-POSTCONDITIONS")
            (out "### " (shown-as n)) (out)
