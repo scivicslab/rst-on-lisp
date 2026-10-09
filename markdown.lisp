@@ -69,13 +69,45 @@
   "段落の部分を書いた順に見る。文は連結して 1 つの散文にし、箇条書き・コードブロック・表はそこで
    散文を区切ってその形で書く。相手が段落なら、そこで散文を区切り、その段落を別の段落として書く。"
   (let ((run '()))
-    (labels ((flush () (when run (out-wrapped (apply #'concatenate 'string (nreverse run))) (out) (setf run '())))
+    (labels ((flush () (when run
+                         (dolist (p (split-paragraphs (apply #'concatenate 'string (nreverse run))))
+                           (out-wrapped p) (out))
+                         (setf run '())))
              (walk (node)
                (cond ((text-p node) (push (rhs node) run))
+                     ((member (kind node) '("SECTION" "SECTIONS") :test #'string=) (flush) (render-headed node 3))
                      ((paragraph-p node) (flush) (render-paragraph node))
                      (t (flush) (render-body (list node))))))
       (dolist (pr (parts name)) (walk (cdr pr)))
       (flush))))
+
+(defun ascii-alnum-p (c) (and (< (char-code c) 128) (alphanumericp c)))
+(defun split-paragraphs (s)
+  "文字列を空行で段落に分ける。段落の中の改行は詰め、英数字どうしの間だけ空白にする。"
+  (let ((paras '()) (lines '()))
+    (flet ((close-para ()
+             (when lines
+               (let ((acc ""))
+                 (dolist (l (nreverse lines))
+                   (setf acc (if (and (plusp (length acc)) (ascii-alnum-p (char acc (1- (length acc))))
+                                      (ascii-alnum-p (char l 0)))
+                                 (concatenate 'string acc " " l)
+                                 (concatenate 'string acc l))))
+                 (push acc paras))
+               (setf lines '()))))
+      (with-input-from-string (in s)
+        (loop for line = (read-line in nil) while line
+              do (let ((l (string-trim '(#\Space #\Tab) line)))
+                   (if (string= l "") (close-para) (push l lines)))))
+      (close-para))
+    (nreverse paras)))
+
+(defun render-headed (node level)   ; section は見出しを書いて中身を、sections は並びの各 section を書く
+  (if (string= (kind node) "SECTION")
+      (progn (out (make-string level :initial-element #\#) " " (attr node :heading)) (out)
+             (dolist (k (rhs node))
+               (if (string= (kind k) "SECTION") (render-headed k (1+ level)) (render-body (list k)))))
+      (dolist (k (rhs node)) (render-headed k level))))
 
 (defun out (&rest parts) (dolist (p parts) (write-string p)) (terpri))
 
@@ -213,11 +245,12 @@
 (defun item (x)   ; 読んだ項を、名前は文字列に、(+ x) などは (op 項) にする
   (if (consp x) (cons (nm (first x)) (mapcar #'item (rest x))) (nm x)))
 
-(defun relation-names ()   ; 共有文法の (relation-name -> (or …)) が挙げる関係名の全部
-  (let ((p (production "RELATION-NAME")))
+(defun relation-names ()   ; 共有文法の relation-name と relation-class が挙げる名前の全部
+  (let ((p (production "RELATION-NAME")) (c (production "RELATION-CLASS")))
     (unless (and p (= 1 (length (first p))) (op-p (first (first p)) "or"))
       (error "the shared grammar has no (relation-name -> (or ...)) production"))
-    (mapcar #'nm (rest (first (first p))))))
+    (mapcar #'nm (append (rest (first (first p)))
+                         (and c (op-p (first (first c)) "or") (rest (first (first c))))))))
 
 (defun load-grammar (path)
   (clrhash *grammar*)
@@ -273,6 +306,8 @@
           ((eq (attr name :kind) 'table) "TABLE")
           ((paragraph-p name) "SUB-PARAGRAPH")
           ((terminal-p name) "STRING")
+          ((and (rhs name) (attr name :heading)) "SECTION")            ; 見出しを持つ節
+          ((and (rhs name) (null (second (rule name)))) "SECTIONS")    ; 名前だけを並べた節のまとまり
           (t l))))
 
 (defun matches (sym k)   ; 文法の名前 sym に、種類 k の子を当てられるか
@@ -371,6 +406,9 @@
 ;; それを非終端とする。how-to-do-it の節の型は、子の名前（goal と step、finding と resolution など）で決まる。
 (defun choice (k name)
   (let ((p (production k)))
+    (when (and p (null (rhs name)) (parts name) (op-p (first (first p)) "or")
+               (member "SUB-PARAGRAPH" (rest (first (first p))) :test #'equal))
+      (return-from choice "SUB-PARAGRAPH"))
     (when (and p (null (second p)) (= 1 (length (first p))) (op-p (first (first p)) "or")
                (rhs name) (not (terminal-p name)))
       (let* ((kinds (mapcar #'kind (rhs name)))
@@ -438,7 +476,6 @@
 (defun shown-as (name) (or (cdr (assoc (label name) *shown-as* :test #'string=)) (pretty name)))
 (defparameter *fixed-heading* '("CORE-IDEA" "GOAL"))   ; 見出しが :heading でなく *shown-as* で決まるラベル
 (defparameter *unnumbered* '("ENTRY" "COMMAND" "RESOLUTION"))   ; :heading を持つが番号を付けないラベル
-(defparameter *no-heading* '("OVERVIEW"))   ; 見出しを付けずに書くラベル
 
 (defun render ()
   "文書を markdown として標準出力に書く。違反があれば標準エラー出力に印字し、何も書かずに終了状態 1 で止まる。"
@@ -461,10 +498,10 @@
           (t (render-section n))))
   (out "## How to do it") (out)
   (let ((no 0))
+    (when (parts "HOW-TO-DO-IT") (render-paragraph "HOW-TO-DO-IT"))   ; 意味構造の対で書いた How to do it
     (dolist (n (rhs "HOW-TO-DO-IT"))
       (let ((fixed (member (label n) *fixed-heading* :test #'string=)))   ; 番号の付かない見出し
-        (cond ((member (label n) *no-heading* :test #'string=))
-              (fixed (out "### " (shown-as n)) (out))
+        (cond (fixed (out "### " (shown-as n)) (out))
               ((member (label n) *unnumbered* :test #'string=) (out "### " (attr n :heading)) (out))
               (t (out (format nil "### ~d. " (incf no)) (attr n :heading)) (out))))
       (render-section n)))
