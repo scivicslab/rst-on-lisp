@@ -180,6 +180,18 @@
           while p do (setf start (+ p 3)))
     (nreverse cells)))
 
+(defun render-list (n indent)
+  "箇条書きを書く。中の箇条書きは、前の項目の下に 4 桁字下げして書く。:start があれば番号をそこから始める。"
+  (let ((num (eq (attr n :kind) 'number))
+        (k (1- (let ((st (attr n :start))) (cond ((integerp st) st) ((stringp st) (parse-integer st)) (t 1))))))
+    (dolist (it (rhs n))
+      (if (string= (kind it) "LIST")
+          (render-list it (concatenate 'string indent "    "))
+          (let* ((lead (if num (format nil "~d. " (incf k)) "- "))
+                 (ls (wrap (rhs it) (- *width* (swidth indent) (swidth lead))
+                           (concatenate 'string indent (if num "   " "  ")))))
+            (out indent lead (first ls)) (dolist (l (rest ls)) (out l)))))))
+
 (defun render-body (names)
   (dolist (n names)
     (cond ((eq (attr n :kind) 'code-block)
@@ -193,13 +205,7 @@
              (out "|" (format nil "~{~a~^|~}" (mapcar (lambda (c) (declare (ignore c)) "---") (first rows))) "|")
              (dolist (r (rest rows)) (out "| " (format nil "~{~a~^ | ~}" r) " |"))
              (out)))
-          ((member (attr n :kind) '(bullet number))
-           (let ((num (eq (attr n :kind) 'number)) (k 0))
-             (dolist (it (rhs n)) (incf k)
-               (let* ((lead (if num (format nil "~d. " k) "- "))
-                      (ls (wrap (rhs it) (- *width* (swidth lead)) (if num "   " "  "))))
-                 (out lead (first ls)) (dolist (l (rest ls)) (out l))))
-             (out)))
+          ((member (attr n :kind) '(bullet number)) (render-list n "") (out))
           (t (render-body (rhs n))))))
 
 (defun render-section (n)   ; 段落 1 つの節点か、段落の並びを持つ節点
@@ -488,6 +494,17 @@
       (ext:quit :status 1)))
   (out "---") (out "id: " *doc-id*) (out "title: " (rhs "TITLE")) (out "description: |")
   (dolist (l (wrap (rhs "DESCRIPTION") 108)) (out "  " l)) (out "---") (out)
+  (when (gethash "BUSINESS-REQUIREMENT" *rules*)   ; Vision の文書
+    (out "## Business Requirement") (out)
+    (dolist (n (rhs "BUSINESS-REQUIREMENT")) (out "### " (attr n :heading)) (out) (render-section n)))
+  (when (gethash "PROBLEM-DEFINITION" *rules*) (render-explanation-body))
+  (when (rhs "RELATED-DOCS")   ; 参照が 1 つも無ければ節ごと書かない
+    (out "## 参考資料") (out) (out "<ul>")
+    (dolist (n (rhs "RELATED-DOCS"))
+      (out "<li><span data-doc-id=\"" (attr-str n :doc) "\" data-relation=\"" (attr-str n :relation) "\">" (rhs n) "</span></li>"))
+    (out "</ul>")))
+
+(defun render-explanation-body ()   ; Problem Definition、How to do it、Under the Hood
   (out "## Problem Definition") (out)
   (render-paragraph "PROBLEM-DEFINITION")   ; 意味構造の対。形式的構造の部分はその後ろ
   (dolist (n (rhs "PROBLEM-DEFINITION"))
@@ -507,12 +524,7 @@
       (render-section n)))
   (when (rhs "UNDER-THE-HOOD")   ; 理由が 1 つも無ければ節ごと書かない
     (out "## Under the Hood") (out)
-    (dolist (n (rhs "UNDER-THE-HOOD")) (out "### " (attr n :question)) (out) (render-section n)))
-  (when (rhs "RELATED-DOCS")   ; 参照が 1 つも無ければ節ごと書かない
-    (out "## 参考資料") (out) (out "<ul>")
-    (dolist (n (rhs "RELATED-DOCS"))
-      (out "<li><span data-doc-id=\"" (attr-str n :doc) "\" data-relation=\"" (attr-str n :relation) "\">" (rhs n) "</span></li>"))
-    (out "</ul>")))
+    (dolist (n (rhs "UNDER-THE-HOOD")) (out "### " (attr n :question)) (out) (render-section n))))
 
 ;; ---- 1 回の起動で複数の文書を扱う ----
 ;; 規則は大域の表に入るので、文書 1 本ごとに表を空にする。
