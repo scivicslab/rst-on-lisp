@@ -250,11 +250,12 @@
   (if (consp x) (cons (nm (first x)) (mapcar #'item (rest x))) (nm x)))
 
 (defun relation-names ()   ; 共有文法の relation-name と relation-class が挙げる名前の全部
-  (let ((p (production "RELATION-NAME")) (c (production "RELATION-CLASS")))
+  (let ((p (production "RELATION-NAME")) (c (production "RELATION-CLASS")) (q (production "PROGRAM-RELATION")))
     (unless (and p (= 1 (length (first p))) (op-p (first (first p)) "or"))
       (error "the shared grammar has no (relation-name -> (or ...)) production"))
     (mapcar #'nm (append (rest (first (first p)))
-                         (and c (op-p (first (first c)) "or") (rest (first (first c))))))))
+                         (and c (op-p (first (first c)) "or") (rest (first (first c))))
+                         (and q (op-p (first (first q)) "or") (rest (first (first q))))))))
 
 (defun load-grammar (path)
   (clrhash *grammar*)

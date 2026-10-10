@@ -23,7 +23,7 @@
 
 ;; 節 1 つを展開する非終端記号。右辺の各語が節の中身になる
 (problem-definition -> (? preconditions-and-postconditions) (? terms) :nucleus content (* :relation-name content)
-                      (* :relation-class content))
+                      (* :relation-class content) (* :program-relation content))
                       ; 中身は意味構造で、sub-paragraph と同じく対で書く。前提条件と達成状態・用語定義は形式的構造で、名前を並べる
 (preconditions-and-postconditions -> preconditions postconditions)
 (business-requirement -> business-background opportunities-and-obstacles business-objectives success-metrics
@@ -86,7 +86,7 @@
 ;; RST Discourse Treebank の関係 78 種（RstDtRelations_261008_oo01）にある。
 ;; 小文字で始まる名前は核とサテライトの関係、大文字で始まる名前は複数の核の関係である。
 ;; relation-class は同じ資料の 16 の類で、関係名の代わりに書いてよい
-(sub-paragraph -> :nucleus content (* :relation-name content) (* :relation-class content))
+(sub-paragraph -> :nucleus content (* :relation-name content) (* :relation-class content) (* :program-relation content))
 (content       -> (or string sub-paragraph section sections list table code-block html-block image))
 ;; 文字列の中の空行は段落の区切りになる
 (relation-name -> (or attribution attribution-n background circumstance cause result consequence-s consequence-n
@@ -103,6 +103,9 @@
                       Topic-Drift Same-Unit TextualOrganization))
 (relation-class -> (or attribution background cause comparison condition contrast elaboration enablement evaluation
                        explanation joint manner-means topic-comment summary temporal topic-change))
+;; プログラム説明の関係。78 種とは別の一覧で、定義と出典は
+;; ProgramExplanationVocabulary_261010_oo01 にある。候補のため、名前は変わりうる。
+(program-relation -> (or step responsibility input-output default failure means effect part))
 
 ;; 箇条書き・コードブロック・表。終端記号の入れ物
 (list       -> (+ (or item list)) :kind (or bullet number) (? :start required))   ; 中の list は前の項目の下に字下げして書く。:start は番号の始まり
