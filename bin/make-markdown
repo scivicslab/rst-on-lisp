@@ -47,14 +47,18 @@ mapfile -t LISP < <(find "${ROOTS[@]}" \
 # a hand-edited .md from a stale one.
 STATE=$HOME/.cache/rst-on-lisp/generated
 key() { printf '%s' "$1" | sha256sum | cut -c1-32; }
-recorded() { cat "$STATE/$(key "$1")" 2>/dev/null; }
 digest() { sha256sum "$1" | cut -c1-64; }
+# A record is keyed by the document id in the rule file's (defdocument ID …), not by a path: a path
+# changes when the directory is moved or renamed, the id does not. A rule file with no id has no record.
+doc_id() { grep -m1 -o '^(defdocument [^ )]*' "$1" | sed 's/^(defdocument //'; }
+record_key() { local id; id=$(doc_id "$1"); [ -n "$id" ] && key "id:$id"; }
+recorded() { local k; k=$(record_key "$1"); [ -n "$k" ] && cat "$STATE/$k" 2>/dev/null; }
 
 TO_BUILD=()
 for lisp in "${LISP[@]}"; do
     md=${lisp%.lisp}.md
     [ -f "$md" ] || continue            # a block file, not a document. An empty .md is rewritten (see below)
-    if [ -s "$md" ] && [ "$(digest "$md")" != "$(recorded "$md")" ]; then
+    if [ -s "$md" ] && [ "$(digest "$md")" != "$(recorded "$lisp")" ]; then
         if [ "$FORCE" = 1 ] || [ "$lisp" -nt "$md" ]; then
             echo "$md was edited by hand or not written by make-markdown; not rewritten. Move the edits into the .lisp, then empty the .md (: > file.md) to let it be regenerated" >&2
         fi
@@ -100,7 +104,8 @@ status=$?
 mkdir -p "$STATE"
 for lisp in "${TO_BUILD[@]}"; do
     md=${lisp%.lisp}.md
-    [ -f "$md" ] && [ "$md" -nt "$START" ] && digest "$md" > "$STATE/$(key "$md")"
+    k=$(record_key "$lisp")
+    [ -f "$md" ] && [ "$md" -nt "$START" ] && [ -n "$k" ] && digest "$md" > "$STATE/$k"
 done
 rm -f "$START"
 exit $status
