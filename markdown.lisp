@@ -71,7 +71,8 @@
   (let ((run '()))
     (labels ((flush () (when run
                          (dolist (p (split-paragraphs (apply #'concatenate 'string (nreverse run))))
-                           (out-wrapped p) (out))
+                           (dolist (line p) (out-wrapped line))   ; 改行は書いたとおりに残す
+                           (out))
                          (setf run '())))
              (walk (node)
                (cond ((text-p node) (push (rhs node) run))
@@ -83,18 +84,10 @@
 
 (defun ascii-alnum-p (c) (and (< (char-code c) 128) (alphanumericp c)))
 (defun split-paragraphs (s)
-  "文字列を空行で段落に分ける。段落の中の改行は詰め、英数字どうしの間だけ空白にする。"
+  "文字列を空行で段落に分ける。段落は行のリストで、行どうしは改行したまま残す（つながない）。"
   (let ((paras '()) (lines '()))
     (flet ((close-para ()
-             (when lines
-               (let ((acc ""))
-                 (dolist (l (nreverse lines))
-                   (setf acc (if (and (plusp (length acc)) (ascii-alnum-p (char acc (1- (length acc))))
-                                      (ascii-alnum-p (char l 0)))
-                                 (concatenate 'string acc " " l)
-                                 (concatenate 'string acc l))))
-                 (push acc paras))
-               (setf lines '()))))
+             (when lines (push (nreverse lines) paras) (setf lines '()))))
       (with-input-from-string (in s)
         (loop for line = (read-line in nil) while line
               do (let ((l (string-trim '(#\Space #\Tab) line)))
