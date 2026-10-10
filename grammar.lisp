@@ -105,7 +105,7 @@
                        explanation joint manner-means topic-comment summary temporal topic-change))
 ;; プログラム説明の関係。78 種とは別の一覧で、定義と出典は
 ;; ProgramExplanationVocabulary_261010_oo01 にある。候補のため、名前は変わりうる。
-(program-relation -> (or assertion recommendation pitfall dispatch))
+(program-relation -> (or domain-meaning assertion recommendation pitfall dispatch))
 
 ;; 箇条書き・コードブロック・表。終端記号の入れ物
 (list       -> (+ (or item list)) :kind (or bullet number) (? :start required))   ; 中の list は前の項目の下に字下げして書く。:start は番号の始まり
