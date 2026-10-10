@@ -25,6 +25,9 @@ FORCE=0
 if [ "${1:-}" = "-a" ]; then FORCE=1; shift; fi
 ROOTS=("$@")
 if [ ${#ROOTS[@]} -eq 0 ]; then ROOTS=("$HOME"/works/doc_*); fi
+# Records are keyed by the .md path, so the roots must be absolute: a relative path would
+# give the same .md two different keys.
+for i in "${!ROOTS[@]}"; do ROOTS[$i]=$(realpath "${ROOTS[$i]}"); done
 
 for f in "$CONVERTER" "$GRAMMAR" "$ABCL"; do
     [ -f "$f" ] || { echo "make-markdown: $f is missing" >&2; exit 1; }
