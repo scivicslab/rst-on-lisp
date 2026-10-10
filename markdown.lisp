@@ -70,9 +70,10 @@
    散文を区切ってその形で書く。相手が段落なら、そこで散文を区切り、その段落を別の段落として書く。"
   (let ((run '()))
     (labels ((flush () (when run
-                         (dolist (p (split-paragraphs (apply #'concatenate 'string (nreverse run))))
-                           (dolist (line p) (out-wrapped line))   ; 改行は書いたとおりに残す
-                           (out))
+                         ;; 文字列の行を書いたとおりに出す。空行は空行のまま出し、段落の区切りは markdown が決める
+                         (dolist (line (split-lines (apply #'concatenate 'string (nreverse run))))
+                           (if (string= line "") (out) (out-wrapped line)))
+                         (out)
                          (setf run '())))
              (walk (node)
                (cond ((text-p node) (push (rhs node) run))
@@ -83,17 +84,12 @@
       (flush))))
 
 (defun ascii-alnum-p (c) (and (< (char-code c) 128) (alphanumericp c)))
-(defun split-paragraphs (s)
-  "文字列を空行で段落に分ける。段落は行のリストで、行どうしは改行したまま残す（つながない）。"
-  (let ((paras '()) (lines '()))
-    (flet ((close-para ()
-             (when lines (push (nreverse lines) paras) (setf lines '()))))
-      (with-input-from-string (in s)
-        (loop for line = (read-line in nil) while line
-              do (let ((l (string-trim '(#\Space #\Tab) line)))
-                   (if (string= l "") (close-para) (push l lines)))))
-      (close-para))
-    (nreverse paras)))
+(defun split-lines (s)   ; 改行で行に分ける。空行も 1 つの行として残す
+  (let ((lines '()) (start 0))
+    (loop for p = (position #\Newline s :start start)
+          do (push (string-right-trim '(#\Space #\Tab) (subseq s start p)) lines)
+          while p do (setf start (1+ p)))
+    (nreverse lines)))
 
 (defun render-headed (node level)   ; section は見出しを書いて中身を、sections は並びの各 section を書く
   (if (string= (kind node) "SECTION")
