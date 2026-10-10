@@ -196,6 +196,8 @@
   (dolist (n names)
     (cond ((eq (attr n :kind) 'code-block)
            (out (if (attr n :file) (fenced (attr-str n :file)) (rhs n))) (out))
+          ((eq (attr n :kind) 'image)   ; 画像。![alt](file)
+           (out "![" (or (attr n :alt) "") "](" (attr-str n :file) ")") (out))
           ((eq (attr n :kind) 'html-block)   ; ファイルの中身を fence で囲まずそのまま書く
            (out (file-text (attr-str n :file))) (out))
           ((paragraph-p n) (render-paragraph n))
@@ -315,6 +317,7 @@
           ((undetermined-p name) *blank-kind*)
           ((eq (attr name :kind) 'code-block) "CODE-BLOCK")
           ((eq (attr name :kind) 'html-block) "HTML-BLOCK")
+          ((eq (attr name :kind) 'image) "IMAGE")
           ((member (attr name :kind) '(bullet number)) "LIST")
           ((eq (attr name :kind) 'table) "TABLE")
           ((paragraph-p name) "SUB-PARAGRAPH")
@@ -499,6 +502,7 @@
         (stderr (get-output-stream-string out)))
       (stderr "render refused: fix the violations and fill the blanks above first")
       (ext:quit :status 1)))
+  (when (book-document-p) (render-book) (return-from render))
   (out "---") (out "id: " *doc-id*) (out "title: " (rhs "TITLE")) (out "description: |")
   (dolist (l (wrap (rhs "DESCRIPTION") 108)) (out "  " l)) (out "---") (out)
   (when (gethash "BUSINESS-REQUIREMENT" *rules*)   ; Vision の文書
@@ -510,6 +514,19 @@
     (dolist (n (rhs "RELATED-DOCS"))
       (out "<li><span data-doc-id=\"" (attr-str n :doc) "\" data-relation=\"" (attr-str n :relation) "\">" (rhs n) "</span></li>"))
     (out "</ul>")))
+
+(defun book-document-p ()   ; document の右辺が title と節のまとまり 1 つ
+  (let ((r (rhs "DOCUMENT")))
+    (and (= 2 (length r)) (string= (first r) "TITLE") (string= (kind (second r)) "SECTIONS"))))
+
+(defun render-book ()
+  "本の文章を書く。front matter は title と defdocument の属性（:stance を除く）で、見出しは ## から始まる。"
+  (out "---") (out "title: \"" (rhs "TITLE") "\"")
+  (loop for (k v) on *doc-attrs* by #'cddr
+        unless (string= (symbol-name k) "STANCE")
+        do (out (pretty (symbol-name k)) ": \"" (shown v) "\""))
+  (out "---") (out)
+  (render-headed (second (rhs "DOCUMENT")) 2))
 
 (defun render-explanation-body ()   ; Problem Definition、How to do it、Under the Hood
   (out "## Problem Definition") (out)

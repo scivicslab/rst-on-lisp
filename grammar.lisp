@@ -10,9 +10,10 @@
 ;;; 左辺に無ければ、規則の形から非終端記号を決める。
 
 ;; 文書の形
-(document           -> (or explanation-document vision-document))   ; どちらの形かは子の名前で決まる
+(document           -> (or explanation-document vision-document book-document))   ; どの形かは子の名前で決まる
 (explanation-document -> title description problem-definition how-to-do-it under-the-hood related-docs)
 (vision-document    -> title description business-requirement related-docs)
+(book-document      -> title sections)   ; 本の文章。見出しは ## から始まる。front matter は defdocument の属性から書く
 (title              -> string)
 (description        -> string)
 (how-to-do-it       -> (or program-description measurement selection guide anti-pattern command-list
@@ -68,7 +69,7 @@
 (criteria         -> (+ body) :heading string)
 (verdict          -> (+ body) :heading string)
 (rejected         -> (+ body) :heading string)
-(body             -> (or sub-paragraph list code-block table html-block))
+(body             -> (or sub-paragraph list code-block table html-block image))
 (sections         -> (+ section))                       ; 見出しを持つ節の並び。対の相手に置ける
 (section          -> (+ (or body section)) :heading string)   ; 入れ子の深さで ### #### と見出しが下がる
 ;; 名前が文法の左辺に無い規則は形から決まる。:heading を持てば section、名前だけを並べていれば sections
@@ -86,7 +87,7 @@
 ;; 小文字で始まる名前は核とサテライトの関係、大文字で始まる名前は複数の核の関係である。
 ;; relation-class は同じ資料の 16 の類で、関係名の代わりに書いてよい
 (sub-paragraph -> :nucleus content (* :relation-name content) (* :relation-class content))
-(content       -> (or string sub-paragraph section sections list table code-block html-block))
+(content       -> (or string sub-paragraph section sections list table code-block html-block image))
 ;; 文字列の中の空行は段落の区切りになる
 (relation-name -> (or attribution attribution-n background circumstance cause result consequence-s consequence-n
                       Consequence Cause-Result comparison Comparison preference analogy Analogy Proportion condition
@@ -108,5 +109,6 @@
 (item       -> string)
 (code-block -> :file file-name :kind code-block)
 (html-block -> :file file-name :kind html-block)   ; 中身を fence で囲まずそのまま書く。rowspan のある表に使う
+(image      -> :file file-name :kind image (? :alt string))   ; ![alt](file) と書く
 (table      -> (+ row) :kind table)   ; 1 行目が見出しの行
 (row        -> string)                ; 升は " | " で区切る
