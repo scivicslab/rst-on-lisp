@@ -576,8 +576,25 @@
   (when (rhs "RELATED-DOCS")   ; 参照が 1 つも無ければ節ごと書かない
     (out "## 参考資料") (out) (out "<ul>")
     (dolist (n (rhs "RELATED-DOCS"))
-      (out "<li><span data-doc-id=\"" (attr-str n :doc) "\" data-relation=\"" (attr-str n :relation) "\">" (rhs n) "</span></li>"))
+      (out "<li><span data-doc-id=\"" (attr-str n :doc) "\" data-relation=\"" (attr-str n :relation) "\">" (code-spans (rhs n)) "</span></li>"))
     (out "</ul>")))
+
+;; 参考資料の行は HTML のブロックの中なので、markdown の `…` はコードの書体にならない。
+;; `…` を <code>…</code> にして書く。中の & < > は文字参照にする（html-saurus はこの行を XML として読む）。
+(defun code-spans (s)
+  (with-output-to-string (o)
+    (loop with i = 0
+          for open = (position #\` s :start i)
+          for close = (and open (position #\` s :start (1+ open)))
+          do (if (and open close)
+                 (progn (write-string s o :start i :end open)
+                        (write-string "<code>" o)
+                        (loop for c across (subseq s (1+ open) close)
+                              do (case c (#\& (write-string "&amp;" o)) (#\< (write-string "&lt;" o))
+                                       (#\> (write-string "&gt;" o)) (t (write-char c o))))
+                        (write-string "</code>" o)
+                        (setf i (1+ close)))
+                 (progn (write-string s o :start i) (loop-finish))))))
 
 (defun book-document-p ()   ; document の右辺が title と節のまとまり 1 つ
   (let ((r (rhs "DOCUMENT")))
