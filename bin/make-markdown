@@ -13,7 +13,9 @@
 # date, but it is not rewritten without the rule file being touched.
 #
 # Every rule file goes through ONE ABCL session, because the JVM start-up is what the time goes into.
-# A rule file with violations or blanks leaves its .md untouched; both go to standard error.
+# A rule file with violations leaves its .md untouched. A rule file with blanks (:instruction rules
+# not yet filled) is a template: its .md is written, with each blank shown as a quoted note. Both the
+# violations and the blanks go to standard error.
 set -uo pipefail
 
 HERE=$(cd "$(dirname "$0")/.." && pwd)

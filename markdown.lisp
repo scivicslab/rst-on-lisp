@@ -248,9 +248,21 @@
                            (concatenate 'string indent (if num "   " "  ")))))
             (out indent lead (first ls)) (dolist (l (rest ls)) (out l)))))))
 
+;; 空欄は、:instruction の指示文を引用の形で書く。:instruction の付いた文書はテンプレートとして読まれるので、
+;; 書き足してほしい場所とその指示が markdown でも見える。
+(defun render-blank (n)
+  (let ((note (attr n :instruction)))
+    (if note
+        (let ((lines (split-lines (shown note))))
+          (out-wrapped (concatenate 'string "> **未記入：** " (first lines)) *width* "> ")
+          (dolist (l (rest lines)) (if (string= l "") (out ">") (out-wrapped (concatenate 'string "> " l) *width* "> "))))
+        (out "> **未記入**"))
+    (out)))
+
 (defun render-body (names)
   (dolist (n names)
-    (cond ((eq (attr n :kind) 'code-block)
+    (cond ((blank-p n) (render-blank n))
+          ((eq (attr n :kind) 'code-block)
            (out (if (attr n :file) (fenced (attr-str n :file)) (rhs n))) (out))
           ((eq (attr n :kind) 'image)   ; 画像。![alt](file)
            (out "![" (or (attr n :alt) "") "](" (attr-str n :file) ")") (out))
@@ -267,7 +279,7 @@
           (t (render-body (rhs n))))))
 
 (defun render-section (n)   ; 段落 1 つの節点か、段落の並びを持つ節点
-  (render-body (if (paragraph-p n) (list n) (rhs n))))
+  (render-body (if (or (paragraph-p n) (blank-p n)) (list n) (rhs n))))
 
 ;; ---- 木の検査 ----
 ;; 根と front matter（title・description）を除く全ての規則は、親の核（:rel 無し）か、
@@ -361,17 +373,18 @@
 (defparameter *blank-kind* "?BLANK")   ; ラベルの無い空欄の種類。文法のどの名前にも当たる
 (defparameter *note-keys* '("INSTRUCTION" "SOURCE"))   ; 文法の属性の照合から外す、LLM への補足
 (defun blank-shape-p (name)
-  (and (not (terminal-p name)) (null (rhs name)) (null (parts name)) (null (attr name :kind))))
+  (and (gethash name *rules*) (not (terminal-p name)) (null (rhs name)) (null (parts name)) (null (attr name :kind))))
 (defun partner-p (name)   ; どこかの段落の対の相手になっているか
   (loop for other being the hash-keys of *rules*
         thereis (find name (parts other) :key #'cdr :test #'string=)))
 (defun undetermined-p (name)
   (and (blank-shape-p name) (not (production (label name)))
        (or (string= (label name) "") (partner-p name))))
-(defun blank-p (name)
+(defun blank-p (name)   ; :instruction を書いた規則は、文法が空の右辺を許す非終端記号（under-the-hood など）でも空欄
   (and (blank-shape-p name)
        (let ((k (kind name)))
-         (or (string= k *blank-kind*)
+         (or (attr name :instruction)
+             (string= k *blank-kind*)
              (progn (loop while (alias-p k) do (setf k (alias-p k)))
                     (let ((p (production k)))
                       (and p (or (string= k "SUB-PARAGRAPH") (not (match (first p) '()))))))))))
@@ -557,14 +570,17 @@
 (defun shown-as (name) (or (cdr (assoc (label name) *shown-as* :test #'string=)) (pretty name)))
 (defparameter *fixed-heading* '("CORE-IDEA" "GOAL"))   ; 見出しが :heading でなく *shown-as* で決まるラベル
 
-(defun render ()
-  "文書を markdown として標準出力に書く。違反があれば標準エラー出力に印字し、何も書かずに終了状態 1 で止まる。"
+(defun render (&optional (report t))
+  "文書を markdown として標準出力に書く。違反があれば標準エラー出力に印字し、何も書かずに終了状態 1 で止まる。
+   空欄は止める理由にしない。標準エラー出力に一覧を印字し、空欄は render-blank の形で書く。
+   report が nil なら一覧を印字しない（build が先に印字している）。"
   (multiple-value-bind (n blanks) (check (make-string-output-stream))
-    (when (or (plusp n) (plusp blanks))
+    (when (and report (or (plusp n) (plusp blanks)))
       (let ((out (make-string-output-stream)))
         (check out)
-        (stderr (get-output-stream-string out)))
-      (stderr "render refused: fix the violations and fill the blanks above first")
+        (stderr (get-output-stream-string out))))
+    (when (plusp n)
+      (stderr "render refused: fix the violations above first")
       (ext:quit :status 1)))
   (when (book-document-p) (render-book) (return-from render))
   (out "---") (out "id: " *doc-id*) (out "title: " (rhs "TITLE")) (out "description: |")
@@ -610,6 +626,7 @@
 
 (defun render-explanation-body ()   ; Problem Definition、How to do it、Under the Hood
   (out "## Problem Definition") (out)
+  (when (blank-p "PROBLEM-DEFINITION") (render-blank "PROBLEM-DEFINITION"))
   (render-paragraph "PROBLEM-DEFINITION")   ; 意味構造の対。形式的構造の部分はその後ろ
   (dolist (n (rhs "PROBLEM-DEFINITION"))
     (cond ((string= n "PRECONDITIONS-AND-POSTCONDITIONS")
@@ -618,6 +635,7 @@
           ((string= n "TERMS") (out (attr n :heading)) (out) (render-body (rhs n)))
           (t (render-section n))))
   (out "## How to do it") (out)
+  (when (blank-p "HOW-TO-DO-IT") (render-blank "HOW-TO-DO-IT"))
   (when (parts "HOW-TO-DO-IT") (render-paragraph "HOW-TO-DO-IT"))   ; 意味構造の対で書いた How to do it
   (dolist (n (rhs "HOW-TO-DO-IT"))
     (if (member (label n) *fixed-heading* :test #'string=)   ; 見出しが変換器で決まる部分
@@ -625,8 +643,9 @@
         (out (attr n :heading)))   ; :heading に書いたとおり（# と番号も含む）
     (out)
     (render-section n))
-  (when (rhs "UNDER-THE-HOOD")   ; 理由が 1 つも無ければ節ごと書かない
+  (when (or (rhs "UNDER-THE-HOOD") (blank-p "UNDER-THE-HOOD"))   ; 理由が 1 つも無ければ節ごと書かない
     (out "## Under the Hood") (out)
+    (when (blank-p "UNDER-THE-HOOD") (render-blank "UNDER-THE-HOOD"))
     (dolist (n (rhs "UNDER-THE-HOOD")) (out (attr n :heading)) (out) (render-section n))))
 
 ;; ---- 1 回の起動で複数の文書を扱う ----
@@ -635,18 +654,18 @@
   (clrhash *rules*) (setf *order* '() *doc-id* nil *doc-attrs* nil *dir* nil *related-missing* '())
   nil)
 
-;; 規則ファイル 1 本を読み、検査して、markdown を書き出す。違反か空欄があれば書かない。
-;; 違反の数と空欄の数を 2 つの値で返す。文法は呼ぶ側が load-grammar で読んでおく。
+;; 規則ファイル 1 本を読み、検査して、markdown を書き出す。違反があれば書かない。空欄があっても書き、
+;; 空欄の一覧は標準エラー出力に印字する。違反の数と空欄の数を 2 つの値で返す。文法は呼ぶ側が load-grammar で読んでおく。
 (defun build (lisp-path md-path)
   (reset)
   (load lisp-path)
   (let ((out (make-string-output-stream)))
     (multiple-value-bind (n blanks) (check out)
-      (if (or (plusp n) (plusp blanks))
-          (progn (stderr (format nil "~a" lisp-path))
-                 (stderr (get-output-stream-string out))
-                 (values n blanks))
-          (with-open-file (s md-path :direction :output :if-exists :supersede
-                                     :if-does-not-exist :create :external-format :utf-8)
-            (let ((*standard-output* s)) (render))
-            (values 0 0))))))
+      (when (or (plusp n) (plusp blanks))
+        (stderr (format nil "~a" lisp-path))
+        (stderr (get-output-stream-string out)))
+      (unless (plusp n)
+        (with-open-file (s md-path :direction :output :if-exists :supersede
+                                   :if-does-not-exist :create :external-format :utf-8)
+          (let ((*standard-output* s)) (render nil))))
+      (values n blanks))))
