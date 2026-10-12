@@ -160,7 +160,7 @@
 
 (defun render-headed (node level)   ; section は見出しを書いて中身を、sections は並びの各 section を書く
   (if (string= (kind node) "SECTION")
-      (progn (out (make-string level :initial-element #\#) " " (attr node :heading)) (out)
+      (progn (out (attr node :heading)) (out)   ; 見出しの行は :heading に書いたとおり（# と番号も含む）
              (dolist (k (rhs node))
                (if (string= (kind k) "SECTION") (render-headed k (1+ level)) (render-body (list k)))))
       (dolist (k (rhs node)) (render-headed k level))))
@@ -556,7 +556,6 @@
                            ("GOAL" . "到達する状態")))
 (defun shown-as (name) (or (cdr (assoc (label name) *shown-as* :test #'string=)) (pretty name)))
 (defparameter *fixed-heading* '("CORE-IDEA" "GOAL"))   ; 見出しが :heading でなく *shown-as* で決まるラベル
-(defparameter *unnumbered* '("ENTRY" "COMMAND" "RESOLUTION"))   ; :heading を持つが番号を付けないラベル
 
 (defun render ()
   "文書を markdown として標準出力に書く。違反があれば標準エラー出力に印字し、何も書かずに終了状態 1 で止まる。"
@@ -572,7 +571,7 @@
   (dolist (l (wrap (rhs "DESCRIPTION") 108)) (out "  " l)) (out "---") (out)
   (when (gethash "BUSINESS-REQUIREMENT" *rules*)   ; Vision の文書
     (out "## Business Requirement") (out)
-    (dolist (n (rhs "BUSINESS-REQUIREMENT")) (out "### " (attr n :heading)) (out) (render-section n)))
+    (dolist (n (rhs "BUSINESS-REQUIREMENT")) (out (attr n :heading)) (out) (render-section n)))
   (when (gethash "PROBLEM-DEFINITION" *rules*) (render-explanation-body))
   (when (rhs "RELATED-DOCS")   ; 参照が 1 つも無ければ節ごと書かない
     (out "## 参考資料") (out) (out "<ul>")
@@ -599,20 +598,19 @@
     (cond ((string= n "PRECONDITIONS-AND-POSTCONDITIONS")
            (out "### " (shown-as n)) (out)
            (dolist (g (rhs n)) (out (shown-as g)) (out) (render-body (list g))))
-          ((string= n "TERMS") (out "### " (attr n :heading)) (out) (render-body (rhs n)))
+          ((string= n "TERMS") (out (attr n :heading)) (out) (render-body (rhs n)))
           (t (render-section n))))
   (out "## How to do it") (out)
-  (let ((no 0))
-    (when (parts "HOW-TO-DO-IT") (render-paragraph "HOW-TO-DO-IT"))   ; 意味構造の対で書いた How to do it
-    (dolist (n (rhs "HOW-TO-DO-IT"))
-      (let ((fixed (member (label n) *fixed-heading* :test #'string=)))   ; 番号の付かない見出し
-        (cond (fixed (out "### " (shown-as n)) (out))
-              ((member (label n) *unnumbered* :test #'string=) (out "### " (attr n :heading)) (out))
-              (t (out (format nil "### ~d. " (incf no)) (attr n :heading)) (out))))
-      (render-section n)))
+  (when (parts "HOW-TO-DO-IT") (render-paragraph "HOW-TO-DO-IT"))   ; 意味構造の対で書いた How to do it
+  (dolist (n (rhs "HOW-TO-DO-IT"))
+    (if (member (label n) *fixed-heading* :test #'string=)   ; 見出しが変換器で決まる部分
+        (out "### " (shown-as n))
+        (out (attr n :heading)))   ; :heading に書いたとおり（# と番号も含む）
+    (out)
+    (render-section n))
   (when (rhs "UNDER-THE-HOOD")   ; 理由が 1 つも無ければ節ごと書かない
     (out "## Under the Hood") (out)
-    (dolist (n (rhs "UNDER-THE-HOOD")) (out "### " (attr n :heading)) (out) (render-section n))))
+    (dolist (n (rhs "UNDER-THE-HOOD")) (out (attr n :heading)) (out) (render-section n))))
 
 ;; ---- 1 回の起動で複数の文書を扱う ----
 ;; 規則は大域の表に入るので、文書 1 本ごとに表を空にする。

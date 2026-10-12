@@ -40,6 +40,7 @@
                          :relation (or prerequisite details applies-with example anti-pattern))
 
 ;; 節の中身。段落・箇条書き・コードブロックの並び。:heading の無いものは見出しが変換器の側で決まっている
+;; :heading の値は見出しの行そのもので、# の数で深さを、番号を付けるなら番号も書く（"### 1. 手順"）。変換器は書いたとおりに出す
 (preconditions    -> list)
 (postconditions   -> list)
 (terms            -> (+ body) :heading string)
