@@ -35,7 +35,7 @@
 (anti-pattern         -> (+ entry))          ; 書き方の誤り 1 つが 1 項目
 (command-list         -> (+ command))        ; コマンド 1 つが 1 節
 (investigation-report -> (+ finding) resolution)  ; 調べて分かったことを順に置き、最後に直した内容
-(why                  -> (+ body) :question string)
+(why                  -> (+ body) :heading string)   ; 見出しは理由が答える問い
 (related-doc          -> string :doc required
                          :relation (or prerequisite details applies-with example anti-pattern))
 
@@ -108,7 +108,7 @@
 (program-relation -> (or domain-meaning assertion recommendation pitfall dispatch))
 
 ;; 箇条書き・コードブロック・表。終端記号の入れ物
-(list       -> (+ (or item list)) :kind (or bullet number) (? :start required))   ; 中の list は前の項目の下に字下げして書く。:start は番号の始まり
+(list       -> (+ (or item list)) :kind (or bullet number))   ; 中の list は前の項目の下に字下げして書く。番号は 1 から振る
 (item       -> string)
 (code-block -> :file file-name :kind code-block)
 (html-block -> :file file-name :kind html-block)   ; 中身を fence で囲まずそのまま書く。rowspan のある表に使う

@@ -237,9 +237,9 @@
     (nreverse cells)))
 
 (defun render-list (n indent)
-  "箇条書きを書く。中の箇条書きは、前の項目の下に 4 桁字下げして書く。:start があれば番号をそこから始める。"
+  "箇条書きを書く。中の箇条書きは、前の項目の下に 4 桁字下げして書く。番号は 1 から振る。"
   (let ((num (eq (attr n :kind) 'number))
-        (k (1- (let ((st (attr n :start))) (cond ((integerp st) st) ((stringp st) (parse-integer st)) (t 1))))))
+        (k 0))
     (dolist (it (rhs n))
       (if (string= (kind it) "LIST")
           (render-list it (concatenate 'string indent "    "))
@@ -612,7 +612,7 @@
       (render-section n)))
   (when (rhs "UNDER-THE-HOOD")   ; 理由が 1 つも無ければ節ごと書かない
     (out "## Under the Hood") (out)
-    (dolist (n (rhs "UNDER-THE-HOOD")) (out "### " (attr n :question)) (out) (render-section n))))
+    (dolist (n (rhs "UNDER-THE-HOOD")) (out "### " (attr n :heading)) (out) (render-section n))))
 
 ;; ---- 1 回の起動で複数の文書を扱う ----
 ;; 規則は大域の表に入るので、文書 1 本ごとに表を空にする。
