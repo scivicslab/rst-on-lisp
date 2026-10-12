@@ -585,10 +585,9 @@
     (and (= 2 (length r)) (string= (first r) "TITLE") (string= (kind (second r)) "SECTIONS"))))
 
 (defun render-book ()
-  "本の文章を書く。front matter は title と defdocument の属性（:stance を除く）で、見出しは ## から始まる。"
+  "本の文章を書く。front matter は title と defdocument の属性で、見出しは ## から始まる。"
   (out "---") (out "title: \"" (rhs "TITLE") "\"")
   (loop for (k v) on *doc-attrs* by #'cddr
-        unless (string= (symbol-name k) "STANCE")
         do (out (pretty (symbol-name k)) ": \"" (shown v) "\""))
   (out "---") (out)
   (render-headed (second (rhs "DOCUMENT")) 2))
