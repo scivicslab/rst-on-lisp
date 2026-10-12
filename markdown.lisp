@@ -4,7 +4,7 @@
 ;; GrammarAndDerivation_261006_oo01 のような名前を、書いたとおりに出すため。
 (setf (readtable-case *readtable*) :invert)
 
-(defpackage :rst (:use :cl) (:export :defrule :defdocument :render :check :verify :load-grammar :reset :build))
+(defpackage :rst (:use :cl) (:export :defrule :defdocument :defrelated :render :check :verify :load-grammar :reset :build))
 (in-package :rst)
 
 ;; ABCL の *error-output* は標準出力と同じ所へ出るので、標準エラー出力には Java の System.err で書く
@@ -48,6 +48,73 @@
                     (pretty (nm name)) (if (symbolp k) (pretty (nm k)) k) term))
     `(progn (setf (gethash ,(nm name) *rules*) (list ',rhs ',attrs ,term))
             (push ,(nm name) *order*) nil)))
+
+;; ---- 参考資料の行をまとめて書く ----
+;; (defrelated (id 関係 "説明") (id 関係) …) は、related-docs と related-doc1 … の規則を作る。1 項目が参考資料の
+;; 1 行で、(defrule related-docN -> "— 説明" :doc id :relation 関係) と同じになる。説明を省くと、参照先の文書の
+;; 題名を、~/works/doc_*/docs の .md の front matter から document id で引いて使う。引く先は環境変数
+;; RST_DOC_ROOTS（: 区切りのディレクトリ）で変えられる。同じ id の文書が 2 本以上あれば、場所の名前の順で
+;; 最初のものを使う。名前が . で始まるディレクトリの下は見ない。見つからない id は check が違反にする。
+(defvar *doc-titles* nil)        ; document id -> 題名。説明を省いた項目が初めて要るときに 1 度だけ作る
+(defvar *related-missing* '())   ; 題名を引けなかった (規則の名前 . id)
+
+(defun doc-roots ()
+  (let ((env (ext:getenv "RST_DOC_ROOTS")))
+    (if (and env (plusp (length env)))
+        (loop for start = 0 then (1+ p) for p = (position #\: env :start start)
+              for d = (subseq env start p) when (plusp (length d)) collect d while p)
+        (let* ((works (java:jnew "java.io.File" (namestring (merge-pathnames "works/" (user-homedir-pathname)))))
+               (entries (java:jcall-raw "listFiles" works)))
+          (sort (loop for i below (if entries (java:jarray-length entries) 0)
+                      for dir = (java:jarray-ref entries i)
+                      for name = (java:jcall "getName" dir)
+                      for docs = (java:jnew "java.io.File" dir "docs")
+                      when (and (>= (length name) 4) (string= "doc_" name :end2 4) (java:jcall "isDirectory" docs))
+                        collect (concatenate 'string (java:jcall "getPath" docs) "/"))
+                #'string<)))))
+
+(defun front-matter-id-title (path)   ; .md の front matter の id: と title: の値。無ければ nil
+  (with-open-file (in path :external-format :utf-8 :if-does-not-exist nil)
+    (when (and in (equal (read-line in nil) "---"))
+      (let (id title)
+        (loop for line = (read-line in nil) for n from 0
+              while (and line (< n 40) (not (equal line "---")))
+              do (flet ((value (key)
+                          (when (and (> (length line) (length key)) (string= key line :end2 (length key)))
+                            (string-trim '(#\Space #\" #\') (subseq line (length key))))))
+                   (or id (setf id (value "id:")))
+                   (or title (setf title (value "title:")))))
+        (and id (values id title))))))
+
+(defun doc-titles ()
+  (or *doc-titles*
+      (let ((table (make-hash-table :test #'equal))
+            (files (loop for root in (doc-roots)
+                         append (directory (merge-pathnames "**/*.md" (pathname (if (char= (char root (1- (length root))) #\/)
+                                                                                     root (concatenate 'string root "/"))))))))
+        (dolist (f (sort (mapcar #'namestring files) #'string<))
+          (unless (search "/." f)
+            (multiple-value-bind (id title) (ignore-errors (front-matter-id-title f))
+              (when (and id title (not (gethash id table))) (setf (gethash id table) title)))))
+        (setf *doc-titles* table))))
+
+(defun add-related-doc (i id relation text)
+  (let* ((name (format nil "RELATED-DOC~d" i))
+         (id-text (shown id))
+         (title (or text (gethash id-text (doc-titles)))))
+    (unless title (push (cons name id-text) *related-missing*))
+    (setf (gethash name *rules*)
+          (list (concatenate 'string "— " (or title "")) (list :doc id :relation relation) t))
+    (push name *order*)
+    nil))
+
+(defmacro defrelated (&rest entries)
+  `(progn
+     (defrule related-docs -> ,@(loop for i from 1 to (length entries)
+                                      collect (intern (format nil "RELATED-DOC~d" i) :rst)))
+     ,@(loop for (id relation text) in entries for i from 1
+             collect `(add-related-doc ,i ',id ',relation ,text))
+     nil))
 
 (defun rule (name) (or (gethash name *rules*) (error "no rule ~a" name)))
 (defun rhs (name) (first (rule name)))
@@ -223,7 +290,15 @@
               (cond ((null (gethash (cdr pr) *rules*))
                      (report "~a: ~a: no rule for ~a named after :~a" *doc-id* (pretty name) (pretty (cdr pr)) (pretty (car pr))))
                     ((string= (cdr pr) name)
-                     (report "~a: ~a: :~a points at itself" *doc-id* (pretty name) (pretty (car pr))))))))))
+                     (report "~a: ~a: :~a points at itself" *doc-id* (pretty name) (pretty (car pr)))))))))
+      (let ((seen (make-hash-table :test #'equal)))   ; 同じ名前の規則を 2 度書くと、前のものは黙って消える
+        (dolist (name (reverse *order*))
+          (when (= (incf (gethash name seen 0)) 2)
+            (report "~a: ~a: defined more than once; only the last definition is kept~@[ (defrelated writes related-docs and related-doc1 …, so do not write them with defrule as well, and write one defrelated)~]"
+                    *doc-id* (pretty name) (search "RELATED-DOC" name)))))
+      (dolist (m (reverse *related-missing*))
+        (report "~a: ~a: no document with id ~a in the document roots (~~/works/doc_*/docs, or RST_DOC_ROOTS), so its title cannot fill the description; write the description"
+                *doc-id* (pretty (car m)) (cdr m))))
     (format stream "~d violations~%" n)
     (let ((blanks (reverse *blanks*)))
       (dolist (b blanks)
@@ -543,7 +618,7 @@
 ;; ---- 1 回の起動で複数の文書を扱う ----
 ;; 規則は大域の表に入るので、文書 1 本ごとに表を空にする。
 (defun reset ()
-  (clrhash *rules*) (setf *order* '() *doc-id* nil *doc-attrs* nil *dir* nil)
+  (clrhash *rules*) (setf *order* '() *doc-id* nil *doc-attrs* nil *dir* nil *related-missing* '())
   nil)
 
 ;; 規則ファイル 1 本を読み、検査して、markdown を書き出す。違反か空欄があれば書かない。
