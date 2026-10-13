@@ -1,0 +1,9 @@
+#!/bin/bash
+# usage: merge-terms <dir> <document id> <title>
+# Merges the per-part rule files book-terms wrote into <dir>/terms.lisp (see merge-terms.lisp).
+set -euo pipefail
+J=$HOME/.m2/repository/org/abcl/abcl/1.9.2/abcl-1.9.2.jar
+DIR=$(realpath "$1")/
+exec java --add-opens java.base/java.lang=ALL-UNNAMED -Dfile.encoding=UTF-8 -Dstdout.encoding=UTF-8 \
+  -jar "$J" --noinform --batch --load "$(dirname "$0")/../merge-terms.lisp" \
+  --eval "(rst-terms:merge-terms \"$DIR\" \"$2\" \"$3\")"

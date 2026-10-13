@@ -257,6 +257,7 @@
           (out-wrapped (concatenate 'string "> **未記入：** " (first lines)) *width* "> ")
           (dolist (l (rest lines)) (if (string= l "") (out ">") (out-wrapped (concatenate 'string "> " l) *width* "> "))))
         (out "> **未記入**"))
+    (when (attr n :frame) (out ">") (out "> フレーム：`" (attr-str n :frame) "`"))
     (out)))
 
 (defun render-body (names)
@@ -336,13 +337,14 @@
 (defun item (x)   ; 読んだ項を、名前は文字列に、(+ x) などは (op 項) にする
   (if (consp x) (cons (nm (first x)) (mapcar #'item (rest x))) (nm x)))
 
-(defun relation-names ()   ; 共有文法の relation-name と relation-class が挙げる名前の全部
-  (let ((p (production "RELATION-NAME")) (c (production "RELATION-CLASS")) (q (production "PROGRAM-RELATION")))
+(defun relation-names ()   ; 共有文法の relation-name・relation-class・program-relation・term-relation が挙げる名前の全部
+  (let ((p (production "RELATION-NAME")))
     (unless (and p (= 1 (length (first p))) (op-p (first (first p)) "or"))
       (error "the shared grammar has no (relation-name -> (or ...)) production"))
     (mapcar #'nm (append (rest (first (first p)))
-                         (and c (op-p (first (first c)) "or") (rest (first (first c))))
-                         (and q (op-p (first (first q)) "or") (rest (first (first q))))))))
+                         (loop for lhs in '("RELATION-CLASS" "PROGRAM-RELATION" "TERM-RELATION")
+                               for q = (production lhs)
+                               when (and q (op-p (first (first q)) "or")) append (rest (first (first q))))))))
 
 (defun load-grammar (path)
   (clrhash *grammar*)
@@ -371,7 +373,9 @@
 ;; いない。そう扱うのは、名前の最後の語が番号だけのもの（known/2）と、段落の対の相手（known/1/evidence）だけで、
 ;; それ以外の文法に無い名前（summary など）は、文法に無い非終端記号として違反にする。
 (defparameter *blank-kind* "?BLANK")   ; ラベルの無い空欄の種類。文法のどの名前にも当たる
-(defparameter *note-keys* '("INSTRUCTION" "SOURCE"))   ; 文法の属性の照合から外す、LLM への補足
+(defparameter *note-keys* '("INSTRUCTION" "SOURCE" "FRAME"))   ; 文法の属性の照合から外す、LLM への補足。
+;; :frame は、その空欄を埋めるときに LLM に渡すフレーム（答え方の型と例を rst-on-lisp で書いた規則ファイル）のパスで、
+;; 空欄のある文書のディレクトリからの相対パスか絶対パスで書く
 (defun blank-shape-p (name)
   (and (gethash name *rules*) (not (terminal-p name)) (null (rhs name)) (null (parts name)) (null (attr name :kind))))
 (defun partner-p (name)   ; どこかの段落の対の相手になっているか

@@ -87,7 +87,8 @@
 ;; RST Discourse Treebank の関係 78 種（RstDtRelations_261008_oo01）にある。
 ;; 小文字で始まる名前は核とサテライトの関係、大文字で始まる名前は複数の核の関係である。
 ;; relation-class は同じ資料の 16 の類で、関係名の代わりに書いてよい
-(sub-paragraph -> :nucleus content (* :relation-name content) (* :relation-class content) (* :program-relation content))
+(sub-paragraph -> :nucleus content (* :relation-name content) (* :relation-class content) (* :program-relation content)
+                  (* :term-relation content))
 (content       -> (or string sub-paragraph section sections list table code-block html-block image))
 ;; 文字列の中の空行は段落の区切りになる
 (relation-name -> (or attribution attribution-n background circumstance cause result consequence-s consequence-n
@@ -107,6 +108,13 @@
 ;; プログラム説明の関係。78 種とは別の一覧で、定義と出典は
 ;; ProgramExplanationVocabulary_261010_oo01 にある。候補のため、名前は変わりうる。
 (program-relation -> (or domain-meaning assertion recommendation pitfall dispatch))
+;; 用語どうしの関係。教科書から抜き出した専門用語を頂点とし、この関係を辺とする用語のグラフに使う。
+;; 向きは「この規則の用語 <関係> 相手の用語」で、(defrule term/object -> :nucleus … :instance-of term/class) は
+;; 「object は class のインスタンスである」と読む。is-a から causes までは WordNet の語の関係（上位語、インスタンス、
+;; 部分、成員、属性、反対語、同義、原因）から、implements から creates までは UML のクラス図（実現、関連、集約、
+;; 合成、依存）とオブジェクト図・シーケンス図（参照、呼び出し、生成）の関係から取った。候補のため、名前は変わりうる。
+(term-relation -> (or is-a instance-of part-of member-of attribute-of opposite-of same-as causes
+                      implements associated-with aggregates composed-of depends-on references calls creates))
 
 ;; 箇条書き・コードブロック・表。終端記号の入れ物
 (list       -> (+ (or item list)) :kind (or bullet number))   ; 中の list は前の項目の下に字下げして書く。番号は 1 から振る
