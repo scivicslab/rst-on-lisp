@@ -378,7 +378,8 @@
          (first (first p)))))
 
 ;; 空欄は、書き手が LLM に書き足してほしい場所として残した、右辺の無い規則である。
-;; 右辺も対も :kind も無く、文法がその非終端記号に子か対を求めるものを空欄とする。:instruction と :source は
+;; 右辺も対も :kind も無く、文法がその非終端記号に子か対を求めるものを空欄とする。:instruction を書いた規則は、
+;; :kind を持っていても空欄とする（:kind code-block の空欄は、埋めると :file を持つコードブロックになる）。:instruction と :source は
 ;; 書かれていれば LLM への補足で、無くてもよい。ラベルが文法に無い空欄は、何の非終端記号になるかがまだ決まって
 ;; いない。そう扱うのは、名前の最後の語が番号だけのもの（known/2）と、段落の対の相手（known/1/evidence）だけで、
 ;; それ以外の文法に無い名前（summary など）は、文法に無い非終端記号として違反にする。
@@ -387,7 +388,8 @@
 ;; :frame は、その空欄を埋めるときに LLM に渡すフレーム（答え方の型と例を rst-on-lisp で書いた規則ファイル）のパスで、
 ;; 空欄のある文書のディレクトリからの相対パスか絶対パスで書く
 (defun blank-shape-p (name)
-  (and (gethash name *rules*) (not (terminal-p name)) (null (rhs name)) (null (parts name)) (null (attr name :kind))))
+  (and (gethash name *rules*) (not (terminal-p name)) (null (rhs name)) (null (parts name))
+       (or (null (attr name :kind)) (attr name :instruction))))
 (defun partner-p (name)   ; どこかの段落の対の相手になっているか
   (loop for other being the hash-keys of *rules*
         thereis (find name (parts other) :key #'cdr :test #'string=)))
