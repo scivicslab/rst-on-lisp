@@ -392,8 +392,10 @@
   (loop for other being the hash-keys of *rules*
         thereis (find name (parts other) :key #'cdr :test #'string=)))
 (defun undetermined-p (name)
+  ;; :instruction を書いた規則は、書き手が空欄だと宣言した規則なので、名前の綴りの誤りではない。置かれた位置を問わず、
+  ;; 種類を未定にする（節の子に置いた空欄も、節の中身として数える）
   (and (blank-shape-p name) (not (production (label name)))
-       (or (string= (label name) "") (partner-p name))))
+       (or (string= (label name) "") (partner-p name) (attr name :instruction))))
 (defun blank-p (name)   ; :instruction を書いた規則は、文法が空の右辺を許す非終端記号（under-the-hood など）でも空欄
   (and (blank-shape-p name)
        (let ((k (kind name)))
