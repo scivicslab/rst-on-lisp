@@ -1,0 +1,19 @@
+#!/usr/bin/env bash
+# usage: catalog [samples-dir]
+# Lists the samples (one per sub-section structure) from the comment lines each begins with:
+# name, how many sub-sections were found with this structure (source + also-seen), how many
+# blocks its shape has, whether frames/<name>.lisp exists, and its use line.
+# The list is made from the files every time; nothing else records the samples.
+dir="${1:-$(dirname "$0")/../samples}"
+frames="$(dirname "$dir")/frames"
+for f in "$dir"/*.lisp; do
+  [ -e "$f" ] || continue
+  name="$(basename "$f" .lisp)"
+  awk -v name="$name" -v frame="$([ -e "$frames/$name.lisp" ] && echo frame || echo -)" '
+    /^;;; use:/       { use = substr($0, 10) }
+    /^;;; shape:/     { n = split(substr($0, 12), parts, "→") }
+    /^;;; (source|also-seen):/ { seen++ }
+    !/^;;; /          { exit }
+    END { printf "%-40s %3d seen  %3d blocks  %-5s  %s\n", name, seen, n, frame, use }
+  ' "$f"
+done
