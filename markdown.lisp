@@ -132,6 +132,15 @@
   (or (string= (label name) "SUB-PARAGRAPH")
       (and (not (terminal-p name)) (null (rhs name)) (parts name) t)))
 
+(defun cjk-char-p (c) (>= (char-code c) #x3000))   ; 仮名・漢字・全角の記号。この文字どうしの間には空白を入れない
+(defun sentence-gap-p (prev next)
+  "連結する 2 つの文の間に空白が要るか。前の文の最後と次の文の最初が、どちらも空白でも改行でも CJK の文字でも
+   ないときだけ要る（英文は空白で区切る。日本語は区切らない）。"
+  (and (plusp (length prev)) (plusp (length next))
+       (let ((a (char prev (1- (length prev)))) (b (char next 0)))
+         (and (not (member a '(#\Space #\Newline))) (not (member b '(#\Space #\Newline)))
+              (not (cjk-char-p a)) (not (cjk-char-p b))))))
+
 (defun render-paragraph (name)
   "段落の部分を書いた順に見る。文は連結して 1 つの散文にし、箇条書き・コードブロック・表はそこで
    散文を区切ってその形で書く。相手が段落なら、そこで散文を区切り、その段落を別の段落として書く。"
@@ -143,7 +152,8 @@
                          (out)
                          (setf run '())))
              (walk (node)
-               (cond ((text-p node) (push (rhs node) run))
+               (cond ((text-p node) (when (and run (sentence-gap-p (first run) (rhs node))) (push " " run))
+                                    (push (rhs node) run))
                      ((member (kind node) '("SECTION" "SECTIONS") :test #'string=) (flush) (render-headed node 3))
                      ((paragraph-p node) (flush) (render-paragraph node))
                      (t (flush) (render-body (list node))))))
