@@ -36,12 +36,34 @@
 (defrule document -> title sections)
 (defrule title -> :instruction "説明するプログラムの名前を題にする。設計だけ、実装だけを説明するなら、その語を添える")
 (defrule sections -> s1)
-(defrule s1 -> p-prev p-plan p-what p-spec p-tasks p-scale p-easy p-new p-code-dirs p-code-dirs-list p-versions
-              kind data hook p-cases flows transforms deployment setting-up security lessons summary quick-ref
-              :heading "## Program")
+;; The nucleus is what the program is and does (p-what). Every other part says, by its relation, what it does for
+;; the nucleus. A part marked :rank secondary is far from the nucleus by its relation: it is about the text or the
+;; reader rather than the program (p-prev, code-reading, code-whereabouts, setting-up), adds a side fact
+;; (p-spec, p-scale, security, quick-ref), or evaluates or restates (lessons, summary). It can be left out.
+;;   steps from the nucleus  part
+;;   0                       p-what
+;;   1                       orientation (p-plan), kind, data-sections, behaviour (flow-sections), conditional-tasks (p-tasks),
+;;                           deployment; secondary: p-spec, p-scale, code-whereabouts, security, lessons, summary, quick-ref
+;;   2                       hook, p-cases, transform-sections; secondary: p-prev, code-reading, setting-up
+(defrule s1 -> program :heading "## Program")
+(defrule program -> :background orientation :nucleus p-what
+                    :elaboration-additional p-spec :elaboration-additional p-scale
+                    :background kind :elaboration-object-attribute data-sections
+                    :elaboration-part-whole behaviour :elaboration-part-whole conditional-tasks
+                    :elaboration-object-attribute deployment :elaboration-additional code-whereabouts
+                    :elaboration-additional security :evaluation-s lessons :summary-s summary
+                    :elaboration-additional quick-ref)
+(defrule orientation -> :background p-prev :nucleus p-plan)
+(defrule data-sections -> data)
+(defrule behaviour -> :background hook :background code-reading :enablement setting-up :background p-cases :nucleus flow-sections)
+(defrule flow-sections -> flows)
+(defrule conditional-tasks -> :nucleus p-tasks :elaboration-general-specific transform-sections)
+(defrule transform-sections -> transforms)
+(defrule code-reading -> :nucleus p-easy :elaboration-additional p-new :rank secondary)
+(defrule code-whereabouts -> :nucleus p-code-dirs :elaboration-set-member p-code-dirs-list :elaboration-additional p-versions :rank secondary)
 
 ;; where this explanation stands against what the reader has read (ipv4 p-prev, implementation p-roadmap/design)
-(defrule p-prev -> :background p-prev/before :nucleus p-prev/n)
+(defrule p-prev -> :background p-prev/before :nucleus p-prev/n :rank secondary)
 (defrule p-prev/before -> :instruction "読み手が前に読んだもの（前の章、同じプログラムの設計）が何を扱ったかを 1 文で書く。つながりが無ければ段落ごと書かない"
   :sample "Chapter 3 deals with the implementation of the ICMP protocol in IPv4 and in IPv6. / After seeing the design of the FileBuy application, we are now ready to see its implementation.")
 (defrule p-prev/n -> :instruction "前に読んだものが、この説明の中でどう使われるかを 1 文で書く"
@@ -75,7 +97,7 @@
   :sample "Chapters 5 and 6 discuss IPv4 routing.")
 
 ;; where the program is defined (ipv4 p-spec)
-(defrule p-spec -> :nucleus p-spec/n)
+(defrule p-spec -> :nucleus p-spec/n :rank secondary)
 (defrule p-spec/n -> :instruction "このプログラムが実装している規格や仕様の文書があれば、番号と題と年で 1 文で書く。無ければ段落ごと書かない"
   :sample "The base definition is in RFC 791, \"Internet Protocol,\" from 1981.")
 
@@ -89,7 +111,7 @@
 (defrule p-tasks/also -> :instruction "それらもこの説明で扱うと 1 文で書く" :sample "These are also important tasks of the IPv4 protocol discussed in this chapter.")
 
 ;; how many of each participant one deployment has (design p-system-scale)
-(defrule p-scale -> :nucleus p-scale/n :example p-scale/fig)
+(defrule p-scale -> :nucleus p-scale/n :example p-scale/fig :rank secondary)
 (defrule p-scale/n -> :instruction "1 つの配置に各参加者がどれだけいるかを 1 文で書き、図を指す。参加者が分かれていなければ段落ごと書かない"
   :sample "A FileBuy VO is made up of one broker and (potentially) hundreds of buyers, sellers, and files.")
 (defrule p-scale/fig -> :instruction "参加者の配置を描いた図を示す" :kind image)
@@ -163,10 +185,10 @@
 
 ;; what to prepare before any flow can be tried (implementation setting-up)
 (defrule setting-up -> :instruction "どの流れを試すより前に用意しておくもの（機械、入れるもの、設定）を説明する。用意が要らなければ空にする"
-  :include "explain-program.setting-up.lisp" :heading "### Setting up")
+  :include "explain-program.setting-up.lisp" :heading "### Setting up" :rank secondary)
 
 ;; the security decisions (design s-security)
-(defrule security -> p-sec-matters p-sec-tradeoff security-decisions :heading "### Security")
+(defrule security -> p-sec-matters p-sec-tradeoff security-decisions :heading "### Security" :rank secondary)
 (defrule p-sec-matters -> :nucleus p-sec-matters/n :reason p-sec-matters/because)
 (defrule p-sec-matters/n -> :instruction "このプログラムで安全性がなぜ大事かを、参加者の性質から 1〜2 文で書く。安全性を論じないなら節ごと書かない"
   :sample "Security is a primary concern in the context of Grid computing, as Grid-based collaborations involve people from multiple administrative domains sharing important resources.")
@@ -182,10 +204,10 @@
 
 ;; what the design teaches (design s-lessons)
 (defrule lessons -> :instruction "この設計から読み手が持ち帰るべき設計の原則を、1 行に 1 つ挙げる。無ければ空にする"
-  :frame "explain-program.lesson.lisp" :heading "### Summing up")
+  :frame "explain-program.lesson.lisp" :heading "### Summing up" :rank secondary)
 
 ;; what the explanation covered (ipv4 summary)
-(defrule summary -> summary/p :heading "### Summary")
+(defrule summary -> summary/p :heading "### Summary" :rank secondary)
 (defrule summary/p -> :nucleus summary/n :elaboration-additional summary/parts :elaboration-additional summary/special :elaboration-additional summary/next)
 (defrule summary/n -> :instruction "この説明が扱ったことを、プログラムと、その中で説明したデータで 1 文で書く。まとめを書かないなら節ごと書かない"
   :sample "This chapter dealt with the IPv4 protocol—how an IPv4 packet is built, the IPv4 header structure and IP options, and how they are handled.")
@@ -197,7 +219,7 @@
   :sample "The next chapter discusses the IPv4 routing subsystem. The \"Quick Reference\" section that follows covers the top methods that are related to the topics discussed in this chapter.")
 
 ;; the methods and macros, each with what it does (ipv4 quick-reference)
-(defrule quick-ref -> qr/intro qr-methods qr-macros :heading "### Quick reference")
+(defrule quick-ref -> qr/intro qr-methods qr-macros :heading "### Quick reference" :rank secondary)
 (defrule qr/intro -> :nucleus qr/intro/n)
 (defrule qr/intro/n -> :instruction "説明で出てきた大事なメソッドやマクロを短く並べて終える、と 1 文で書く。早見表を作らないなら節ごと書かない"
   :sample "I conclude this chapter with a short list of important methods and macros of the IPv4 subsystem that were mentioned in this chapter.")
