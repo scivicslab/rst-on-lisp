@@ -1,0 +1,30 @@
+;;; Subject-tag tree for the official doc "How the agent loop works" (Claude Agent SDK documentation), built from
+;;; its own on-page table of contents before reading the body, per FrameOntology_261021_oo01. The whole page was
+;;; converted, so every node has :file (one page, one file).
+(in-package :rst)
+(defsubjects claude-agent-sdk-agent-loop :book "/home/devteam/works/doc_Base012/docs/Papers-AgentHarness/claude-agent-loop"
+  :url "https://code.claude.com/docs/en/agent-sdk/agent-loop" :from "the page's own on-page table of contents")
+
+(subject "1" "The loop at a glance" :file "claude-agent-loop.md")
+(subject "2" "Turns and messages" :file "claude-agent-loop.md")
+(subject "3" "Message types" :file "claude-agent-loop.md")
+(subject "3.1" "Handle messages" :file "claude-agent-loop.md")
+(subject "4" "Tool execution" :file "claude-agent-loop.md")
+(subject "4.1" "Built-in tools" :file "claude-agent-loop.md")
+(subject "4.2" "Tool permissions" :file "claude-agent-loop.md")
+(subject "4.3" "Parallel tool execution" :file "claude-agent-loop.md")
+(subject "5" "Control how the loop runs" :file "claude-agent-loop.md")
+(subject "5.1" "Turns and budget" :file "claude-agent-loop.md")
+(subject "5.1.1" "Budget headroom" :file "claude-agent-loop.md")
+(subject "5.2" "Effort level" :file "claude-agent-loop.md")
+(subject "5.3" "Permission mode" :file "claude-agent-loop.md")
+(subject "5.4" "Model" :file "claude-agent-loop.md")
+(subject "6" "The context window" :file "claude-agent-loop.md")
+(subject "6.1" "What consumes context" :file "claude-agent-loop.md")
+(subject "6.2" "Automatic compaction" :file "claude-agent-loop.md")
+(subject "6.3" "Keep context efficient" :file "claude-agent-loop.md")
+(subject "7" "Sessions and continuity" :file "claude-agent-loop.md")
+(subject "8" "Handle the result" :file "claude-agent-loop.md")
+(subject "9" "Hooks" :file "claude-agent-loop.md")
+(subject "10" "Put it all together" :file "claude-agent-loop.md")
+(subject "11" "Next steps" :file "claude-agent-loop.md")
