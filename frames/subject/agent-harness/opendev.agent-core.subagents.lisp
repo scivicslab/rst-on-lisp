@@ -1,5 +1,5 @@
 ;;; subject: opendev-terminal-agent-2603 2.2.7 Subagent Orchestration: how the main agent hands subtasks to specialised subagents with limited tools, runs them side by side, and keeps them from running without end
-;;; made-from: doc_Base012/docs/Papers-AgentHarness/opendev-terminal-agent/02_agent-core/02_agent-core.lisp / s45 .. s14
+;;; made-from: doc_Base012/docs/Papers-AgentHarness/opendev-terminal-agent/02_agent-core/02_agent-core.lisp / s45 .. s50
 ;;; members: why roles-intro restrict parallel stop-conditions design-evolution
 ;;; children (:include / :frame, in the text's order): roles (each item one copy of opendev.agent-core.subagent-role.lisp)
 ;;; elsewhere: none

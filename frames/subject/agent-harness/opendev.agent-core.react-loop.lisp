@@ -1,5 +1,5 @@
 ;;; subject: opendev-terminal-agent-2603 2.2.6 Extended ReAct Execution Loop: the loop that carries out one user query: why thinking is split from acting, what each phase does, how a stuck loop is caught, and how the loop ends
-;;; made-from: doc_Base012/docs/Papers-AgentHarness/opendev-terminal-agent/02_agent-core/02_agent-core.lisp / s37 .. s14
+;;; made-from: doc_Base012/docs/Papers-AgentHarness/opendev-terminal-agent/02_agent-core/02_agent-core.lisp / s37 .. s44
 ;;; members: exec why-split init phase0 phase1 phase2 phase3-branch doom-loop why-two-tier dispatch termination design-evolution
 ;;; elsewhere: none
 ;;; left-out: the caption of Figure 8 and Algorithm 1

@@ -1,5 +1,5 @@
 ;;; subject: opendev-terminal-agent-2603 2.4.5 Multi-Language Semantic Code Analysis via LSP: how symbol-level navigation and editing tools are built on language servers behind four layers with a content-hash cache
-;;; made-from: doc_Base012/docs/Papers-AgentHarness/opendev-terminal-agent/04_tool-system/04_tool-system.lisp / s25 .. s4
+;;; made-from: doc_Base012/docs/Papers-AgentHarness/opendev-terminal-agent/04_tool-system/04_tool-system.lisp / s25 .. s32
 ;;; members: overview layers cache design-evolution
 ;;; children (:include / :frame, in the text's order): tools (each item one copy of opendev.tool-system.tool.lisp)
 ;;; elsewhere: none

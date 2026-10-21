@@ -1,5 +1,5 @@
 ;;; subject: opendev-terminal-agent-2603 2.4.6 User Interaction, Task Management, and Planning: the eight tools that let the agent ask structured questions, track tasks, get a plan approved and signal completion
-;;; made-from: doc_Base012/docs/Papers-AgentHarness/opendev-terminal-agent/04_tool-system/04_tool-system.lisp / s33 .. s4
+;;; made-from: doc_Base012/docs/Papers-AgentHarness/opendev-terminal-agent/04_tool-system/04_tool-system.lisp / s33 .. s38
 ;;; members: overview plan-outcomes completion-signal design-evolution
 ;;; children (:include / :frame, in the text's order): tools (each item one copy of opendev.tool-system.tool.lisp)
 ;;; elsewhere: none

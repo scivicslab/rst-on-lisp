@@ -1,5 +1,5 @@
 ;;; subject: opendev-terminal-agent-2603 2.4.3 Shell Execution and Background Tasks: how shell commands run safely through a staged pipeline, and how long-running processes are moved to the background, listed, read and stopped
-;;; made-from: doc_Base012/docs/Papers-AgentHarness/opendev-terminal-agent/04_tool-system/04_tool-system.lisp / s13 .. s4
+;;; made-from: doc_Base012/docs/Papers-AgentHarness/opendev-terminal-agent/04_tool-system/04_tool-system.lisp / s13 .. s18
 ;;; members: overview pipeline background design-evolution
 ;;; children (:include / :frame, in the text's order): tools (each item one copy of opendev.tool-system.tool.lisp)
 ;;; elsewhere: none

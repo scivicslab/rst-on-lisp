@@ -1,5 +1,5 @@
 ;;; subject: opendev-terminal-agent-2603 2.3.4 Context-Aware System Reminders: how short messages are injected just before the decision that would otherwise go wrong, so that early instructions keep their effect in a long run
-;;; made-from: doc_Base012/docs/Papers-AgentHarness/opendev-terminal-agent/03_context-engineering/03_context-engineering.lisp / s19 .. s13
+;;; made-from: doc_Base012/docs/Papers-AgentHarness/opendev-terminal-agent/03_context-engineering/03_context-engineering.lisp / s19 .. s25
 ;;; members: problem example cause approach detectors templates guards user-role degradation design-evolution
 ;;; elsewhere: none
 ;;; left-out: the captions of Figures 11 and 12

@@ -1,5 +1,5 @@
 ;;; subject: opendev-terminal-agent-2603 2.4.7 Token-Efficient External Tool Discovery via MCP: how external tools are found by keyword search and only the found tools have their schemas put in the context
-;;; made-from: doc_Base012/docs/Papers-AgentHarness/opendev-terminal-agent/04_tool-system/04_tool-system.lisp / s39 .. s4
+;;; made-from: doc_Base012/docs/Papers-AgentHarness/opendev-terminal-agent/04_tool-system/04_tool-system.lisp / s39 .. s41
 ;;; members: problem flow detail-levels design-evolution
 ;;; children (:include / :frame, in the text's order): tools (each item one copy of opendev.tool-system.tool.lisp)
 ;;; elsewhere: none

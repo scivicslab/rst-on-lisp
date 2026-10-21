@@ -1,5 +1,5 @@
 ;;; subject: opendev-terminal-agent-2603 2.3.3 Dual-Memory Architecture for Bounded Thinking: how the thinking step gets a bounded context from a periodically regenerated summary of the whole history plus the latest messages verbatim
-;;; made-from: doc_Base012/docs/Papers-AgentHarness/opendev-terminal-agent/03_context-engineering/03_context-engineering.lisp / s14 .. s13
+;;; made-from: doc_Base012/docs/Papers-AgentHarness/opendev-terminal-agent/03_context-engineering/03_context-engineering.lisp / s14 .. s18
 ;;; members: tension episodic working combined design-evolution
 ;;; elsewhere: none
 ;;; left-out: none

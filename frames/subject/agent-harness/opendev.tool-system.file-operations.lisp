@@ -1,5 +1,5 @@
 ;;; subject: opendev-terminal-agent-2603 2.4.2 File Operations: the five tools that read, create, edit, list and search files, with the checks that keep the agent from damaging files by stale or inexact edits
-;;; made-from: doc_Base012/docs/Papers-AgentHarness/opendev-terminal-agent/04_tool-system/04_tool-system.lisp / s6 .. s4
+;;; made-from: doc_Base012/docs/Papers-AgentHarness/opendev-terminal-agent/04_tool-system/04_tool-system.lisp / s6 .. s12
 ;;; members: overview edit-matching edit-safety design-evolution
 ;;; children (:include / :frame, in the text's order): tools (each item one copy of opendev.tool-system.tool.lisp)
 ;;; elsewhere: none

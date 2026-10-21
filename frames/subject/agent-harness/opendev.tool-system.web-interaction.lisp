@@ -1,5 +1,5 @@
 ;;; subject: opendev-terminal-agent-2603 2.4.4 Web Interaction: the four read-only tools that fetch pages, search the web, take screenshots and open a browser, and why a browser engine is used
-;;; made-from: doc_Base012/docs/Papers-AgentHarness/opendev-terminal-agent/04_tool-system/04_tool-system.lisp / s19 .. s4
+;;; made-from: doc_Base012/docs/Papers-AgentHarness/opendev-terminal-agent/04_tool-system/04_tool-system.lisp / s19 .. s24
 ;;; members: overview design-evolution
 ;;; children (:include / :frame, in the text's order): tools (each item one copy of opendev.tool-system.tool.lisp)
 ;;; elsewhere: none

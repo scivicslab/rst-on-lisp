@@ -1,5 +1,5 @@
 ;;; subject: opendev-terminal-agent-2603 2.4.8 Subagent Delegation, Skills, and Batch Execution: the three tools that go beyond single calls: handing a subtask to a subagent, loading domain knowledge on demand, and running several calls in one turn
-;;; made-from: doc_Base012/docs/Papers-AgentHarness/opendev-terminal-agent/04_tool-system/04_tool-system.lisp / s42 .. s4
+;;; made-from: doc_Base012/docs/Papers-AgentHarness/opendev-terminal-agent/04_tool-system/04_tool-system.lisp / s42 .. s46
 ;;; members: overview subagent skills batch design-evolution next
 ;;; elsewhere: none
 ;;; left-out: none
