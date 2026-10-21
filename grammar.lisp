@@ -72,7 +72,7 @@
 (rejected         -> (+ body) :heading string)
 (body             -> (or sub-paragraph list code-block table html-block image))
 (sections         -> (+ section))                       ; 見出しを持つ節の並び。対の相手に置ける
-(section          -> (+ (or body section)) :heading string)   ; 入れ子の深さで ### #### と見出しが下がる
+(section          -> (+ (or body section)) :heading string (? :rank (or secondary)))   ; 入れ子の深さで ### #### と見出しが下がる
 ;; 名前が文法の左辺に無い規則は形から決まる。:heading を持てば section、名前だけを並べていれば sections
 
 ;; sub-paragraph。核 1 つと、その核に結ばれるサテライトから成る。:nucleus が核で、ちょうど 1 つある。
@@ -88,7 +88,10 @@
 ;; 小文字で始まる名前は核とサテライトの関係、大文字で始まる名前は複数の核の関係である。
 ;; relation-class は同じ資料の 16 の類で、関係名の代わりに書いてよい
 (sub-paragraph -> :nucleus content (* :relation-name content) (* :relation-class content) (* :program-relation content)
-                  (* :term-relation content))
+                  (* :term-relation content) (? :rank (or secondary)))
+;; :rank は、核から遠いサテライトに付ける印。secondary の付いたサテライトは、説明する対象や読み手によっては
+;; 取り上げなくてよい。核からの遠さは、そのサテライトが核に対して何をしているか（関係と、核までの段数）で決める。
+;; 値は後で増やしてよい（tertiary など）。
 (content       -> (or string sub-paragraph section sections list table code-block html-block image))
 ;; 文字列の中の空行は段落の区切りになる
 (relation-name -> (or attribution attribution-n background circumstance cause result consequence-s consequence-n
@@ -117,10 +120,10 @@
                       implements associated-with aggregates composed-of depends-on references calls creates))
 
 ;; 箇条書き・コードブロック・表。終端記号の入れ物
-(list       -> (+ (or item list)) :kind (or bullet number))   ; 中の list は前の項目の下に字下げして書く。番号は 1 から振る
+(list       -> (+ (or item list)) :kind (or bullet number) (? :rank (or secondary)))   ; 中の list は前の項目の下に字下げして書く。番号は 1 から振る
 (item       -> string)
-(code-block -> :file file-name :kind code-block)
-(html-block -> :file file-name :kind html-block)   ; 中身を fence で囲まずそのまま書く。rowspan のある表に使う
-(image      -> :file file-name :kind image (? :alt string))   ; ![alt](file) と書く
-(table      -> (+ row) :kind table)   ; 1 行目が見出しの行
+(code-block -> :file file-name :kind code-block (? :rank (or secondary)))
+(html-block -> :file file-name :kind html-block (? :rank (or secondary)))   ; 中身を fence で囲まずそのまま書く。rowspan のある表に使う
+(image      -> :file file-name :kind image (? :alt string) (? :rank (or secondary)))   ; ![alt](file) と書く
+(table      -> (+ row) :kind table (? :rank (or secondary)))   ; 1 行目が見出しの行
 (row        -> string)                ; 升は " | " で区切る
