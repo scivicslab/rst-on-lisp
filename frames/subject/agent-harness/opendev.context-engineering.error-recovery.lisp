@@ -1,0 +1,15 @@
+;;; subject: opendev-terminal-agent-2603 2.3.5 Context-Injected Error Recovery: how a failed tool call is turned into targeted recovery guidance placed right before the next model call, with a bounded number of attempts
+;;; made-from: doc_Base012/docs/Papers-AgentHarness/opendev-terminal-agent/03_context-engineering/03_context-engineering.lisp / s26
+;;; members: problem steps budget
+;;; elsewhere: none
+;;; left-out: none
+(defrule error-recovery -> error-recovery-problem error-recovery-steps error-recovery-budget)
+(defrule error-recovery-problem -> :nucleus error-recovery-problem/n :elaboration-additional error-recovery-problem/a1)
+(defrule error-recovery-problem/n -> :instruction "エラーがそのまま入ったときのエージェントの反応を 1 文で書く" :sample "When a tool call fails, the raw error message enters the conversation as a tool result.")
+(defrule error-recovery-problem/a1 -> :instruction "対策の考え方を 1 文で書く" :sample "Template-based error recovery addresses this by injecting targeted recovery guidance directly into the context window, turning error messages into actionable instructions that the model can follow.")
+(defrule error-recovery-steps -> :nucleus error-recovery-steps/n :elaboration-additional error-recovery-steps/a1)
+(defrule error-recovery-steps/n -> :instruction "手順の数と、各段階を 1 文で書く" :sample "The mechanism operates in four steps: (1) classify the error by pattern-matching the message to one of six categories (permission error, file not found, edit mismatch, syntax error, rate limit, timeout); (2) retrieve the corresponding recovery template from a centralized template store; (3) format the template with context-specific details (the failing file path, the mismatched content, the specific error message); and (4) inject the formatted template as a system message immediately before the next LLM call, placing it at maximum recency in the conversation.")
+(defrule error-recovery-steps/a1 -> :instruction "具体例の指示文と、一般的な再試行の指示より役立つ理由を 1 文で書く" :sample "For example, an edit-mismatch error produces the guidance: “ the file has changed since you last read it; re-read the file and retry your edit with the current content. ” This is substantially more actionable than a generic retry instruction, because it tells the model what changed and what to do next.")
+(defrule error-recovery-budget -> :nucleus error-recovery-budget/n :elaboration-additional error-recovery-budget/a1)
+(defrule error-recovery-budget/n -> :instruction "無限の再試行を防ぐ回数の上限を 1 文で書く" :sample "A budget of 3 nudge attempts per error sequence prevents infinite retry loops: after three consecutive failed recovery attempts on the same error, the system accepts the failure and allows the agent to proceed or ask the user for help.")
+(defrule error-recovery-budget/a1 -> :instruction "雛形を平文で外に置く利点を 1 文で書く" :sample "Templates are stored as plain text outside the source code, making recovery strategies extensible (new error categories require adding a template, not modifying code) and customizable (users can override templates for project-specific recovery patterns).")

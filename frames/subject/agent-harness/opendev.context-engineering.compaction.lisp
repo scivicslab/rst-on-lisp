@@ -1,0 +1,25 @@
+;;; subject: opendev-terminal-agent-2603 2.3.6 Adaptive Context Compaction: how context is reduced in five stages of rising pressure instead of one emergency summary, and how learned strategies are kept across sessions
+;;; made-from: doc_Base012/docs/Papers-AgentHarness/opendev-terminal-agent/03_context-engineering/03_context-engineering.lisp / s27 .. s28
+;;; members: problem acc artifact playbook
+;;; children (:include / :frame, in the text's order): stages (each item one copy of opendev.context-engineering.compaction-stage.lisp)
+;;; elsewhere: none
+;;; left-out: the captions of Figures 13 and 14
+(defrule compaction -> compaction-problem compaction-acc stages compaction-artifact compaction-playbook)
+(defrule compaction-problem -> :nucleus compaction-problem/n :elaboration-additional compaction-problem/a1 :elaboration-additional compaction-problem/a2)
+(defrule compaction-problem/n -> :instruction "観察が文脈の大部分を占める問題を 1 文で書く" :sample "As an agent operates within a ReAct loop, tool observations, such as file contents and command outputs, accumulate and quickly dominate the context window, frequently consuming 70–80% of the available token budget.")
+(defrule compaction-problem/a1 -> :instruction "従来の二値の閾値の方式を 1 文で書く" :sample "Standard systems rely on a binary emergency compaction threshold (typically triggered at 95–99% capacity) that performs a lossy summarization of the conversation history.")
+(defrule compaction-problem/a2 -> :instruction "その方式の欠点を 1 文で書く" :sample "This approach results in late activation, severe information loss, and compounding errors upon subsequent compactions.")
+(defrule compaction-acc -> :nucleus compaction-acc/n :elaboration-additional compaction-acc/a1)
+(defrule compaction-acc/n -> :instruction "使用量の測り方と、導入した枠組みを 1 文で書く" :sample "To mitigate these issues, OpenDev monitors token usage incrementally, using the API’s reported prompt_tokens count as a calibration anchor, and implements Adaptive Context Compaction (ACC), a framework that manages context pressure through a five-stage pipeline of progressively aggressive reduction strategies (Figure 13).")
+(defrule compaction-acc/a1 -> :instruction "各繰り返しの冒頭で段階を適用することを 1 文で書く" :sample "Rather than waiting for the context window to fill, ACC monitors context pressure at the start of every ReAct iteration and applies five graduated stages:")
+(defrule stages -> :instruction "圧縮の段階を、圧力が低い方から順に、1 行に 1 つ段階の名前で挙げる" :frame "opendev.context-engineering.compaction-stage.lisp")
+(defrule compaction-artifact -> :nucleus compaction-artifact/n :elaboration-additional compaction-artifact/a1 :elaboration-additional compaction-artifact/a2)
+(defrule compaction-artifact/n -> :instruction "圧縮の要約に残す、触れたファイルの索引を 1 文で書く" :sample "ACC’s compaction pipeline additionally maintains an Artifact Index, a structured registry of all files touched and operations performed during the session (read, created, modified, deleted).")
+(defrule compaction-artifact/a1 -> :instruction "履歴の保管先を要約に書く効果を 1 文で書く" :sample "The history archive path is also injected into the summary (“ Full conversation history archived at <path>.")
+(defrule compaction-artifact/a2 -> :instruction "測定した効果を 1 文で書く" :sample "Quantitative evaluations demonstrate that ACC reduces peak context consumption of observations by approximately 54%, often eliminating the need for emergency compaction entirely over typical 30-turn sessions.")
+(defrule compaction-playbook -> :nucleus compaction-playbook/n :elaboration-additional compaction-playbook/a1 :elaboration-additional compaction-playbook/a2 :elaboration-additional compaction-playbook/a3 :elaboration-additional compaction-playbook/a4)
+(defrule compaction-playbook/n -> :instruction "複数の実行で積む経験を、実行の手引きとして持つ仕組みを 1 文で書く" :sample "Agents working in a project over multiple sessions accumulate experience about which approaches succeed and which do not.")
+(defrule compaction-playbook/a1 -> :instruction "選び出しの採点を 1 文で書く" :sample "In Stage 1, the BulletSelector ranks every bullet by a weighted score combining effectiveness (0.5), recency decay (0.3), and semantic similarity to the current query via cosine similarity over cached embeddings (0.2); the top-ranked bullets are injected into the Generator’s system prompt so the agent can act on prior experience.")
+(defrule compaction-playbook/a2 -> :instruction "振り返り役の起動と出力を 1 文で書く" :sample "Stage 2 is governed by an episodic memory mechanism: every five messages of agent interaction, the system activates the Reflector to analyze the accumulated experience.")
+(defrule compaction-playbook/a3 -> :instruction "編集役の役割を 1 文で書く" :sample "Stage 3’s Curator reads the reflection and plans concrete mutations: adding new bullets, updating existing ones, re-tagging effectiveness counters, or removing stale entries, emitted as a DeltaBatch.")
+(defrule compaction-playbook/a4 -> :instruction "適用と保存を 1 文で書く" :sample "Finally, in Stage 4 the mutations are applied to the Playbook’s bullet table and the updated state is persisted to a session-scoped JSON file, ready for the next query cycle.")

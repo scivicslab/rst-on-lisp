@@ -1,0 +1,16 @@
+;;; subject: opendev-terminal-agent-2603 2.5.3 Configuration: the four tiers of settings, each overriding the one below it, and how the context limit follows from the chosen model
+;;; made-from: doc_Base012/docs/Papers-AgentHarness/opendev-terminal-agent/05_persistence/05_persistence.lisp / s11
+;;; members: tiers precedence context-limit
+;;; elsewhere: none
+;;; left-out: none
+(defrule configuration -> configuration-tiers configuration-precedence configuration-context-limit)
+(defrule configuration-tiers -> :nucleus configuration-tiers/n :elaboration-set-member configuration-tiers/a1)
+(defrule configuration-tiers/n -> :instruction "設定が階層を成すことと、その狙いを 1 文で書く" :sample "Configuration follows a four-tier hierarchy designed so that users get reasonable behavior out of the box but can customize anything at the right scope:")
+(defrule configuration-tiers/a1 -> :instruction "階層を 1 項目ずつ、階層の名前と何を持つかで書く" :sample "Built-in defaults provide a working configuration without any user setup (default model, temperature, auto-save interval, and so on). / Environment variables supply API credentials and CI/CD-specific overrides. API keys are only loaded from environment variables, never from configuration files, to prevent accidental exposure in version control. If a key is found in a configuration file, it is automatically stripped during loading. / User-global settings (~/.opendev/settings.json) store cross-project preferences such as the user’s preferred model, UI settings, and tool auto-approval rules. / Project-local settings (<project>/.opendev/settings.json) store repository-specific overrides, such as a different model for a particular codebase or project-specific coding standards." :kind bullet)
+(defrule configuration-precedence -> :nucleus configuration-precedence/n :elaboration-additional configuration-precedence/a1)
+(defrule configuration-precedence/n -> :instruction "どの階層が優先されるかを 1 文で書く" :sample "Each tier overrides the one above it: project settings take precedence over user-global settings, which take precedence over environment variables, which take precedence over built-in defaults.")
+(defrule configuration-precedence/a1 -> :instruction "読み込みの時機とキャッシュを 1 文で書く" :sample "The configuration is loaded once at startup and cached in memory; subsequent reads return the cached value without re-reading files.")
+(defrule configuration-context-limit -> :nucleus configuration-context-limit/n :elaboration-additional configuration-context-limit/a1 :elaboration-additional configuration-context-limit/a2)
+(defrule configuration-context-limit/n -> :instruction "文脈の上限をモデルの能力から自動で決めることを 1 文で書く" :sample "Context window limits are derived automatically from model capabilities rather than requiring explicit configuration.")
+(defrule configuration-context-limit/a1 -> :instruction "その手順を 1 文で書く" :sample "When the user selects a model, the system looks up its maximum context length from the provider cache (described below) and sets the token budget accordingly.")
+(defrule configuration-context-limit/a2 -> :instruction "この方式が避ける誤設定を 1 文で書く" :sample "This avoids a common source of misconfiguration where users set a context limit that does not match their model’s actual capacity.")
