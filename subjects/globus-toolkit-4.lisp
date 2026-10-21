@@ -305,7 +305,7 @@
 (subject "24.2.1" "The FilesForSale Service" :file "Chap24/globus_toolkit_p411-420/globus_toolkit_p411-420.md")
 (subject "24.2.2" "The AddFile Client" :file "Chap24/globus_toolkit_p421-430/globus_toolkit_p421-430.md")
 (subject "24.2.3" "Trying it Out" :file "Chap24/globus_toolkit_p421-430/globus_toolkit_p421-430.md")
-(subject "24.3" "Usage scenario 2: Finding a File" :file "Chap24/globus_toolkit_p421-430/globus_toolkit_p421-430.md")
+(subject "24.3" "Usage Scenario 2: Finding a File" :file "Chap24/globus_toolkit_p421-430/globus_toolkit_p421-430.md")
 (subject "24.3.1" "The File Broker Service" :file "Chap24/globus_toolkit_p421-430/globus_toolkit_p421-430.md")
 (subject "24.3.2" "The FindFile Client" :file "Chap24/globus_toolkit_p421-430/globus_toolkit_p421-430.md")
 (subject "24.4" "Usage Scenario 3: Purchasing a File" :file "Chap24/globus_toolkit_p421-430/globus_toolkit_p421-430.md")

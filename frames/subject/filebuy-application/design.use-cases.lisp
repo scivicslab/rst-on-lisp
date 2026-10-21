@@ -13,4 +13,4 @@
 (defrule p-cases-plan/n -> :instruction "各利用場面をまず構成要素のやりとりの順にたどることを 1 文で書く" :sample "We begin by walking through the sequence of component interactions for each use case.")
 (defrule p-cases-plan/decisions -> :instruction "次に設計上の決定を説明することを 1 文で書く" :sample "A brief explanation of key design decisions follows.")
 (defrule p-cases-plan/concepts -> :instruction "最後にその場面から言える一般的な考え方を挙げることを 1 文で書く" :sample "Then each use case study concludes with highlights of important general concepts.")
-(defrule use-cases -> :instruction "取り上げる利用場面を、1 行に 1 つ、上で挙げた順に挙げる" :frame "design.use-case.lisp" :heading "#### Usage scenarios")
+(defrule use-cases -> :instruction "取り上げる利用場面を、1 行に 1 つ、上で挙げた順に、場面の名前で挙げる" :frame "design.use-case.lisp")

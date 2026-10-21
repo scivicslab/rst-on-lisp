@@ -1,6 +1,6 @@
 ;;; one use case: the sequence of interactions with its diagram, the design decisions it involves, the general concepts it shows
 ;;; members: 23.3.1 23.3.2 23.3.3 (each has Overview, Design Details, General Concepts)
-(defrule use-case -> use-case/overview use-case/details use-case/concepts)
+(defrule use-case -> use-case/overview use-case/details use-case/concepts :heading "#### {item}")
 (defrule use-case/overview -> use-case/seq use-case/steps :heading "##### Overview")
 (defrule use-case/seq -> :nucleus use-case/seq/n :example use-case/seq/fig)
 (defrule use-case/seq/n -> :instruction "この利用場面を、誰の立場から見るかとともに 1 文で導入し、シーケンス図を指す"
