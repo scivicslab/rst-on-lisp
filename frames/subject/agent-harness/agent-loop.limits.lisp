@@ -1,4 +1,4 @@
-;;; subject: agent-harness / claude-agent-sdk-agent-loop 5.1 and 5.1.1 Turns and budget: the two caps on a run, what happens at a cap, and how far spend can pass a cap
+;;; subject: claude-agent-sdk-agent-loop 5.1 Turns and budget (5.1.1 Budget headroom): the two caps on a run, what happens at a cap, and how far spend can pass a cap
 ;;; made-from: doc_Base012/docs/Papers-AgentHarness/claude-agent-loop/claude-agent-loop.lisp / s-turns-budget s-budget-headroom
 ;;; members: budget-table p-budget-subagents p-headroom
 ;;; children: none

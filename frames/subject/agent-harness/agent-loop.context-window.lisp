@@ -1,4 +1,4 @@
-;;; subject: agent-harness / claude-agent-sdk-agent-loop 6 The context window: what the model can see in a session, what fills it, how it is compacted, and how to keep it small
+;;; subject: claude-agent-sdk-agent-loop 6 The context window (6.1 What consumes context, 6.2 Automatic compaction, 6.3 Keep context efficient): what the model can see in a session, what fills it, how it is compacted, and how to keep it small
 ;;; made-from: doc_Base012/docs/Papers-AgentHarness/claude-agent-loop/claude-agent-loop.lisp / s-context (s-what-consumes s-autocompact s-keep-efficient)
 ;;; members: p-context-what p-consumes-note autocompact-items efficient-items (sources: each is one copy of agent-loop.context-source.lisp)
 ;;; children: each source of context is one copy of agent-loop.context-source.lisp

@@ -1,4 +1,4 @@
-;;; subject: agent-harness / claude-agent-sdk-agent-loop 7 Sessions and continuity: how a run is identified, resumed and branched, and how its transcript outlives a host
+;;; subject: claude-agent-sdk-agent-loop 7 Sessions and continuity: how a run is identified, resumed and branched, and how its transcript outlives a host
 ;;; made-from: doc_Base012/docs/Papers-AgentHarness/claude-agent-loop/claude-agent-loop.lisp / s-sessions
 ;;; members: p-session-id p-session-resume p-session-store
 ;;; children: none

@@ -1,4 +1,4 @@
-;;; subject: agent-harness / claude-agent-sdk-agent-loop 5 Control how the loop runs: the settings that bound a run, set how hard the model reasons, decide who approves tool use, and choose the model
+;;; subject: claude-agent-sdk-agent-loop 5 Control how the loop runs (5.4 Model): the settings that bound a run, set how hard the model reasons, decide who approves tool use, and choose the model
 ;;; made-from: doc_Base012/docs/Papers-AgentHarness/claude-agent-loop/claude-agent-loop.lisp / s-control (s-turns-budget s-effort s-permission-mode s-model)
 ;;; members: p-model
 ;;; children (:include, in the page's order): 5.1 and 5.1.1 agent-loop.limits.lisp, 5.2 agent-loop.effort.lisp, 5.3 agent-loop.permission-mode.lisp

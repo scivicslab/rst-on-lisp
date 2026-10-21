@@ -1,4 +1,4 @@
-;;; subject: agent-harness / claude-agent-sdk-agent-loop 5.2 Effort level: how much reasoning the model applies per response, the levels, and what the setting trades
+;;; subject: claude-agent-sdk-agent-loop 5.2 Effort level: how much reasoning the model applies per response, the levels, and what the setting trades
 ;;; made-from: doc_Base012/docs/Papers-AgentHarness/claude-agent-loop/claude-agent-loop.lisp / s-effort
 ;;; members: p-effort-what p-effort-default (levels: each is one copy of agent-loop.effort-level.lisp)
 ;;; children: each level is one copy of agent-loop.effort-level.lisp

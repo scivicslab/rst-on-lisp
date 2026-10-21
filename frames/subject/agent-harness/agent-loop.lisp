@@ -1,4 +1,4 @@
-;;; subject: agent-harness / claude-agent-sdk-agent-loop: the loop with which an agent run alternates between the model and its tools, explained from one cycle to the way a run is bounded, remembered and ended
+;;; subject: claude-agent-sdk-agent-loop 1 The loop at a glance (2 Turns and messages): the loop with which an agent run alternates between the model and its tools, explained from one cycle to the way a run is bounded, remembered and ended
 ;;; made-from: doc_Base012/docs/Papers-AgentHarness/claude-agent-loop/claude-agent-loop.lisp / s-glance s-turns (and the sections included below)
 ;;; members: p-intro glance-steps p-cycle turns-example
 ;;; children (:include, in the page's order): subject 3 and 3.1 agent-loop.message-kinds.lisp, 4 agent-loop.tool-execution.lisp, 5 agent-loop.control.lisp, 6 agent-loop.context-window.lisp, 7 agent-loop.session.lisp, 8 agent-loop.result.lisp, 9 agent-loop.hooks.lisp

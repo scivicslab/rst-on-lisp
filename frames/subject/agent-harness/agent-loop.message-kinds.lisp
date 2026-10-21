@@ -1,4 +1,4 @@
-;;; subject: agent-harness / claude-agent-sdk-agent-loop 3 and 3.1 Message types: what the loop yields to the program that drives it, kind by kind, and how the program takes them
+;;; subject: claude-agent-sdk-agent-loop 3 Message types (3.1 Handle messages): what the loop yields to the program that drives it, kind by kind, and how the program takes them
 ;;; made-from: doc_Base012/docs/Papers-AgentHarness/claude-agent-loop/claude-agent-loop.lisp / s-messages s-handle-messages
 ;;; members: p-system-message p-assistant-message p-user-message p-stream-event p-result-message (each is one copy of agent-loop.message-kind.lisp), handle-items (first three bullets)
 ;;; children: each kind is one copy of agent-loop.message-kind.lisp

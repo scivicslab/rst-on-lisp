@@ -1,4 +1,4 @@
-;;; subject: agent-harness / claude-agent-sdk-agent-loop 9 Hooks: callbacks the application attaches at fixed points of the loop, and where they run
+;;; subject: claude-agent-sdk-agent-loop 9 Hooks: callbacks the application attaches at fixed points of the loop, and where they run
 ;;; made-from: doc_Base012/docs/Papers-AgentHarness/claude-agent-loop/claude-agent-loop.lisp / s-hooks
 ;;; members: p-hooks-what p-hooks-isolation (hook points: each is one copy of agent-loop.hook.lisp)
 ;;; children: each hook is one copy of agent-loop.hook.lisp

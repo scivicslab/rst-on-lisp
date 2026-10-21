@@ -1,4 +1,4 @@
-;;; subject: agent-harness / claude-agent-sdk-agent-loop 4 Tool execution: which tool calls the loop lets run without asking, which it blocks, and which it runs side by side
+;;; subject: claude-agent-sdk-agent-loop 4 Tool execution (4.2 Tool permissions, 4.3 Parallel tool execution): which tool calls the loop lets run without asking, which it blocks, and which it runs side by side
 ;;; made-from: doc_Base012/docs/Papers-AgentHarness/claude-agent-loop/claude-agent-loop.lisp / s-tools (s-tool-permissions s-parallel-tools)
 ;;; members: permission-items p-parallel
 ;;; children: none

@@ -1,4 +1,4 @@
-;;; subject: agent-harness / claude-agent-sdk-agent-loop 8 Handle the result: how the end of the loop is told apart, what each ending carries, and what to guard against
+;;; subject: claude-agent-sdk-agent-loop 8 Handle the result: how the end of the loop is told apart, what each ending carries, and what to guard against
 ;;; made-from: doc_Base012/docs/Papers-AgentHarness/claude-agent-loop/claude-agent-loop.lisp / s-result
 ;;; members: p-result-what p-result-field guard-items error-end-items p-result-stop-reason (subtypes: each is one copy of agent-loop.result-subtype.lisp)
 ;;; children: each subtype is one copy of agent-loop.result-subtype.lisp

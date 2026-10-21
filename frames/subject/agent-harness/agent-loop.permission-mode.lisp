@@ -1,4 +1,4 @@
-;;; subject: agent-harness / claude-agent-sdk-agent-loop 5.3 Permission mode: the setting that decides whether the agent asks for approval before using a tool, the modes, and which to pick for which use
+;;; subject: claude-agent-sdk-agent-loop 5.3 Permission mode: the setting that decides whether the agent asks for approval before using a tool, the modes, and which to pick for which use
 ;;; made-from: doc_Base012/docs/Papers-AgentHarness/claude-agent-loop/claude-agent-loop.lisp / s-permission-mode
 ;;; members: p-permission-mode-what p-permission-mode-advice (modes: each is one copy of agent-loop.mode.lisp)
 ;;; children: each mode is one copy of agent-loop.mode.lisp
