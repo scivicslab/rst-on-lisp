@@ -1,0 +1,7 @@
+;;; one design decision of the harness: what was chosen, what in the harness calls for it, what was chosen against, and what the choice brings
+;;; roles: claude-doc: - / opendev: opendev.design-decision.lisp (the sample is planning delegated to a read-only subagent)
+(defrule decision -> :nucleus decision/chosen :reason decision/calls-for :comparison decision/not-chosen :result decision/brings)
+(defrule decision/chosen -> :instruction "決めた事柄の名前に続けて、何を選んだかを 1 文で書く" :sample "Rather than switching the main agent into a restricted mode via dedicated plan-management tools, OpenDev delegates planning to a first-class Planner subagent.")
+(defrule decision/calls-for -> :instruction "このハーネスのどんな事情や失敗がその選択を求めるかを 1〜2 文で書く" :sample "This was brittle: the agent sometimes failed to exit plan mode, leaving the system stuck in a read-only state requiring manual intervention.")
+(defrule decision/not-chosen -> :instruction "選ばなかった案、または以前の案と、その中身を 1 文で書く。無ければ空にする" :sample "The initial design used a four-tool state machine (enter_plan_mode, exit_plan_mode, create_plan, edit_plan) that switched the main agent into a restricted planning state.")
+(defrule decision/brings -> :instruction "その選択がもたらす利点や、引き換えにするものを 1 文で書く。無ければ空にする" :sample "This yields three advantages: (1) no state machine means no risk of getting stuck in plan mode; (2) the Planner can be spawned concurrently with other subagents (e.g., a Code Explorer for parallel analysis); and (3) the tool surface is reduced from four tools to one (present_plan), reducing cognitive load on the LLM.")

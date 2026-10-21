@@ -1,0 +1,5 @@
+;;; one mechanism that works across the whole life of a request: what it does, and the concrete problems it solves
+;;; roles: claude-doc: - / opendev: opendev.agent-core.mechanism.lisp (the sample is the interrupt tokens)
+(defrule mechanism -> :nucleus mechanism/does :elaboration-general-specific mechanism/solves)
+(defrule mechanism/does -> :instruction "仕組みの名前と、それが全段階で行うことを 1 文で書く" :sample "Interrupt tokens propagate cancellation requests from the UI to the agent thread, polled at six phase boundaries within each iteration (before and after thinking, before action, during tool execution, and at iteration boundaries).")
+(defrule mechanism/solves -> :instruction "その仕組みが解く具体的な問題があれば書く。無ければ空にする" :sample "The interrupt system addresses several race conditions through targeted fixes: modal controllers (ask-user dialogs, plan approval) take priority over agent interrupts to prevent orphaned UI state; subprocess creation uses process groups (start_new_session=True) so that os.killpg reliably terminates child processes; and a one-shot guard prevents duplicate interrupt messages from rapid key presses.")
