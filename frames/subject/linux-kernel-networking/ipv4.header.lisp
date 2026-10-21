@@ -2,7 +2,7 @@
 ;;;          kernel structure that represents it, explained member by member
 ;;; made-from: doc_Base011/docs/Books-Infra/LinuxKernelNetworking/Chap04/CHAPTER 4_ IPv4 _ Linux Kernel Networking_ Implementation and Theory_p001-005 / s-header (with the end of the section from pages 6-10)
 ;;; members: p-layout p-figure p-holds p-struct p-members-intro p-ihl p-members p-header-end
-;;; children: each member is one copy of ipv4.header-member.lisp
+;;; children: each member is one copy of ipv4.struct-member.lisp
 ;;; left-out: none
 (defrule header -> p-layout p-figure p-figure/img p-holds p-struct p-struct/code members p-end)
 ;; where the header sits in a packet, its sizes, and why the reader must learn it first (p-layout)
@@ -31,7 +31,7 @@
   :sample "The packet is discarded when there is some problem (for example, if the version, which is the first member, is not 4, or if the checksum is incorrect).")
 (defrule p-struct/code -> :instruction "カーネルのデータ構造の定義を、定義のあるファイルの道筋を添えて示す" :kind code-block)
 ;; the members, one by one, in the order of the structure (p-ihl p-members)
-(defrule members -> :instruction "データ構造の欄を、定義の順に、1 行に 1 つ欄の名前で挙げる" :frame "ipv4.header-member.lisp")
+(defrule members -> :instruction "データ構造の欄を、定義の順に、1 行に 1 つ欄の名前で挙げる" :frame "ipv4.struct-member.lisp")
 ;; what the section taught, and what comes next (p-header-end)
 (defrule p-end -> :summary-n p-end/learned :nucleus p-end/next)
 (defrule p-end/learned -> :instruction "この節で読み手が何を知ったかを 1 文でまとめる" :sample "In this section you have learned about the various IPv4 header members and their purposes.")

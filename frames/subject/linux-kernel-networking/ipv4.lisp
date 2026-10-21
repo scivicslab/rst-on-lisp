@@ -2,8 +2,9 @@
 ;;;          the paths a packet takes through it
 ;;; made-from: doc_Base011/docs/Books-Infra/LinuxKernelNetworking/Chap04/CHAPTER 4_ IPv4 _ Linux Kernel Networking_ Implementation and Theory_p001-005 / ch4
 ;;; members: p-prev p-what p-rfc p-functions p-covers p-frag
-;;; children: 4/Sec1 ipv4.header.lisp (:include), 4/Sec2 ipv4.initialization.lisp (:include)
-;;; not yet framed: 4/Sec3-4/Sec18 (Receiving IPv4 Packets onward); their rule files are not written yet
+;;; children (:include, in the chapter's order): 4/Sec1 ipv4.header.lisp, 4/Sec2 ipv4.initialization.lisp, 4/Sec3 and 4/Sec4 ipv4.path.lisp,
+;;;          4/Sec5-4/Sec8 ipv4.ip-options.lisp, 4/Sec10 ipv4.path.lisp, 4/Sec11-4/Sec14 ipv4.packet-transform.lisp (twice), 4/Sec15 ipv4.path.lisp,
+;;;          4/Sec16 ipv4.summary.lisp, 4/Sec17 ipv4.quick-reference.lisp
 ;;; left-out: none
 (in-package :rst)
 (defdocument Ipv4Frame)
@@ -11,7 +12,8 @@
 (defrule document -> title sections)
 (defrule title -> :instruction "説明するサブシステムが扱うプロトコルの名前を題にする")
 (defrule sections -> s1)
-(defrule s1 -> p-prev p-what p-spec p-functions p-covers p-tasks header initialization :heading "## IPv4")
+(defrule s1 -> p-prev p-what p-spec p-functions p-covers p-tasks header initialization receiving receiving-mc options sending fragmentation defragmentation forwarding summary quick-reference
+              :heading "## IPv4")
 
 ;; where the chapter stands against the previous one (p-prev)
 (defrule p-prev -> :background p-prev/before :nucleus p-prev/n)
@@ -44,3 +46,13 @@
 ;; 4/Sec1 and 4/Sec2
 (defrule header -> :instruction "パケットの先頭のヘッダを、カーネルのデータ構造とともに説明する" :include "ipv4.header.lisp" :heading "### Header")
 (defrule initialization -> :instruction "このプロトコルの受け取り口をカーネルに登録するところを説明する" :include "ipv4.initialization.lisp" :heading "### Initialization")
+;; 4/Sec3-4/Sec17, in the chapter's order
+(defrule receiving -> :instruction "受け取ったパケットの道筋を説明する" :include "ipv4.path.lisp" :heading "### Receiving packets")
+(defrule receiving-mc -> :instruction "特別な宛先（マルチキャスト）のパケットを受け取る道筋を説明する。無ければ空にする" :include "ipv4.path.lisp" :heading "### Receiving multicast packets")
+(defrule options -> :instruction "ヘッダの省略できる部分（選択肢）を、解析と組み立てまで説明する" :include "ipv4.ip-options.lisp" :heading "### Options")
+(defrule sending -> :instruction "パケットを送る道筋を説明する" :include "ipv4.path.lisp" :heading "### Sending packets")
+(defrule fragmentation -> :instruction "大きすぎるパケットを分ける変換を説明する" :include "ipv4.packet-transform.lisp" :heading "### Fragmentation")
+(defrule defragmentation -> :instruction "分けられたパケットを組み立て直す変換を説明する" :include "ipv4.packet-transform.lisp" :heading "### Defragmentation")
+(defrule forwarding -> :instruction "受け取ったパケットを別の口から送り出す道筋を説明する" :include "ipv4.path.lisp" :heading "### Forwarding")
+(defrule summary -> :instruction "章をまとめる" :include "ipv4.summary.lisp" :heading "### Summary")
+(defrule quick-reference -> :instruction "章で出てきたメソッドとマクロの早見表を作る" :include "ipv4.quick-reference.lisp" :heading "### Quick reference")
