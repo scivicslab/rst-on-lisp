@@ -17,7 +17,7 @@ find "$BOOK" -name '*.md' -print0 | sort -zV | while IFS= read -r -d '' f; do
     awk -v file="$rel" '
         /^#+ / {
             h = $0
-            sub(/^#+ +/, "", h); gsub(/\*\*/, "", h); gsub(/[ \t]+$/, "", h)
+            sub(/^#+ +/, "", h); gsub(/[*_]/, "", h); gsub(/[ \t]+$/, "", h)
             num = ""; title = ""
             if (match(h, /^Chapter [0-9]+/)) {
                 num = substr(h, 9, RLENGTH - 8); title = substr(h, RLENGTH + 1)
