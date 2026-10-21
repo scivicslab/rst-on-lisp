@@ -1,0 +1,31 @@
+#!/bin/bash
+# Writes the subject tree of a book whose headings carry no numbers, from the links of its publisher's
+# table of contents (FrameOntology_261021_oo01): a link to "..._ChNN.xhtml" is the chapter node "NN", a link
+# to "..._ChNN.xhtml#SecK" is the section node "NN/SecK". The contents page lost its indentation in OCR, so
+# sections are listed flat under their chapter, in the contents' order. Each node says the file of the book
+# whose heading has the same title, when there is one.
+#
+#   subjects-from-contents <book-dir> <name> <contents-file>...  > subjects/<name>.lisp
+set -euo pipefail
+BOOK=$(realpath "$1"); NAME=$2; shift 2
+echo "(in-package :rst)"
+echo "(defsubjects $NAME :book \"$BOOK\" :from \"publisher's table of contents; sections are flat under their chapter\")"
+HEADS=$(mktemp)
+find "$BOOK" -name '*.md' -print0 | sort -zV | while IFS= read -r -d '' f; do
+    awk -v file="${f#"$BOOK"/}" '/^#+ /{h=$0; sub(/^#+ +/,"",h); gsub(/[*_]/,"",h); gsub(/\[|\]\([^)]*\)/,"",h); print h "\t" file}' "$f"
+done > "$HEADS"
+cat "$@" | awk -v heads="$HEADS" '
+    BEGIN { FS = "\t"; while ((getline line < heads) > 0) { split(line, a, "\t"); if (!(a[1] in file)) file[a[1]] = a[2] } FS = " " }
+    match($0, /\[[^]]*\]\([^)]*_Ch[0-9]+\.xhtml(#Sec[0-9]+)?\)/) {
+        link = substr($0, RSTART, RLENGTH)
+        title = link; sub(/^\[/, "", title); sub(/\]\(.*$/, "", title)
+        ch = link; sub(/^.*_Ch/, "", ch); sub(/\.xhtml.*$/, "", ch); ch = ch + 0
+        sec = ""; if (link ~ /#Sec/) { sec = link; sub(/^.*#Sec/, "", sec); sub(/\).*$/, "", sec) }
+        num = sec == "" ? ch : ch "/Sec" sec
+        if (seen[num]++) next
+        if (sec == "") { t = title; sub(/^Chapter [0-9]+: */, "", t); title = t }
+        gsub(/"/, "\\\"", title)
+        f = (title in file) ? " :file \"" file[title] "\"" : ""
+        printf "(subject \"%s\" \"%s\"%s)\n", num, title, f
+    }'
+rm -f "$HEADS"
