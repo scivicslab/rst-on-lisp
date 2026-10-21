@@ -1,24 +1,17 @@
 ;;; subject: opendev-terminal-agent-2603 2.4.5 Multi-Language Semantic Code Analysis via LSP: how symbol-level navigation and editing tools are built on language servers behind four layers with a content-hash cache
-;;; made-from: doc_Base012/docs/Papers-AgentHarness/opendev-terminal-agent/04_tool-system/04_tool-system.lisp / s25 .. s32
-;;; members: overview layers cache design-evolution
-;;; children (:include / :frame, in the text's order): tools (each item one copy of opendev.tool-system.tool.lisp)
+;;; made-from: doc_Base012/docs/Papers-AgentHarness/opendev-terminal-agent/04_tool-system/04_tool-system.lisp / p-lsp-tools p-lsp-layers p-lsp-cache p-find-symbol p-find-references p-rename-symbol p-replace-body p-insert-symbol p-lsp-evolution
+;;; members: adopt layers cache
+;;; children (:include / :frame, in the text's order): layer-list (each item one copy of opendev.tool-system.lsp-layer.lisp), tools (each item one copy of opendev.tool-system.tool.lisp), changes (each item one copy of opendev.design-change.lisp)
 ;;; elsewhere: none
 ;;; left-out: the caption of Figure 18
-(defrule code-analysis -> code-analysis-overview code-analysis-layers code-analysis-cache tools code-analysis-design-evolution)
-(defrule code-analysis-overview -> :nucleus code-analysis-overview/n :elaboration-additional code-analysis-overview/a1 :elaboration-additional code-analysis-overview/a2)
-(defrule code-analysis-overview/n -> :instruction "道具の数と、二つの種類を 1 文で書く" :sample "Six tools provide multi-language semantic code analysis via LSP (see Symbols category in Table 1), split into two read-only navigation tools and four structural editing tools.")
-(defrule code-analysis-overview/a1 -> :instruction "文字列の検索では足りない理由を 1 文で書く" :sample "Text-based tools can search for strings but miss semantic structure: finding all usages of a method requires distinguishing method calls from variable names, handling overloading, and tracking references across files.")
-(defrule code-analysis-overview/a2 -> :instruction "言語サーバを使う理由を 1 文で書く" :sample "Building custom parsers for each language is infeasible, so OpenDev adopts Language Server Protocol integration via standard language servers [55], reusing a mature ecosystem where each server is maintained by domain experts.")
-(defrule code-analysis-layers -> :nucleus code-analysis-layers/n :elaboration-additional code-analysis-layers/a1 :elaboration-additional code-analysis-layers/a2 :elaboration-additional code-analysis-layers/a3 :elaboration-additional code-analysis-layers/a4)
-(defrule code-analysis-layers/n -> :instruction "四つの層で、道具の呼び出しを言語サーバの通信に翻訳することを 1 文で書く" :sample "Figure 18 illustrates the architecture, organized into four layers that progressively translate between agent-facing tool calls and language-server-specific protocol messages.")
-(defrule code-analysis-layers/a1 -> :instruction "記号の名前を位置に解決する層の一致の種類を 1 文で書く" :sample "The Symbol Retriever provides a unified API that resolves symbol names to positions using a NamePathMatcher supporting exact match (MyClass.method), partial path match (method matching any symbol whose path ends with .method), and wildcard match (My* matching MyClass, MyModule).")
-(defrule code-analysis-layers/a2 -> :instruction "言語の判定とサーバの寿命の管理を 1 文で書く" :sample "The LSP Server Wrapper handles language detection (30+ file extensions; see Figure 18) and server lifecycle via a singleton pool: one server per language, started lazily, with automatic liveness checks and transparent restart on crash.")
-(defrule code-analysis-layers/a3 -> :instruction "低水準の通信の層を 1 文で書く" :sample "The Solid Language Server manages the low-level LSP protocol through a subprocess handler communicating via JSON-RPC 2.0 over stdio, with two daemon threads per server for I/O, thread-safe request IDs, and configurable per-request timeouts.")
-(defrule code-analysis-layers/a4 -> :instruction "新しい言語の追加の容易さを 1 文で書く" :sample "Each language server extends a common base class with language-specific overrides (initialization parameters, ignored directories, cross-file reference wait times), allowing new languages to be added by dropping in a server class without modifying the core framework.")
-(defrule code-analysis-cache -> :nucleus code-analysis-cache/n :elaboration-additional code-analysis-cache/a1)
-(defrule code-analysis-cache/n -> :instruction "往復を省く二段の保存を 1 文で書く" :sample "To avoid redundant LSP round-trips, each language server maintains a two-level cache keyed by file content hash (MD5).")
-(defrule code-analysis-cache/a1 -> :instruction "保存の保管先と版の確認を 1 文で書く" :sample "Cache storage uses pickle serialization in the project’s .solidlsp/cache/<language_id>/ directory, with a version field that ensures incompatible caches are discarded.")
+(defrule code-analysis -> code-analysis-adopt code-analysis-layers layer-list code-analysis-cache tools changes)
+(defrule code-analysis-adopt -> :background code-analysis-adopt/text :nucleus code-analysis-adopt/lsp)
+(defrule code-analysis-adopt/text -> :instruction "文字列の検索が意味の構造を捉えられない問題を 1 文で書く" :sample "Text-based tools can search for strings but miss semantic structure: finding all usages of a method requires distinguishing method calls from variable names, handling overloading, and tracking references across files.")
+(defrule code-analysis-adopt/lsp -> :instruction "言語サーバを使う方針を書く" :sample "so OpenDev adopts Language Server Protocol integration via standard language servers [55], reusing a mature ecosystem where each server is maintained by domain experts.")
+(defrule code-analysis-layers -> :instruction "翻訳の層の数と役割を 1 文で書く" :sample "Figure 18 illustrates the architecture, organized into four layers that progressively translate between agent-facing tool calls and language-server-specific protocol messages.")
+(defrule layer-list -> :instruction "層を、1 行に 1 つ層の名前で挙げる" :frame "opendev.tool-system.lsp-layer.lisp")
+(defrule code-analysis-cache -> :nucleus code-analysis-cache/two-level :elaboration-set-member code-analysis-cache/levels)
+(defrule code-analysis-cache/two-level -> :instruction "往復を省く保存の仕組みを 1 文で書く" :sample "each language server maintains a two-level cache keyed by file content hash (MD5).")
+(defrule code-analysis-cache/levels -> :instruction "保存の段ごとの使い方を 1 文で書く" :sample "When a file has not changed, queries return from Level 2 without contacting the server.")
 (defrule tools -> :instruction "道具を、1 行に 1 つ道具の名前で挙げる" :frame "opendev.tool-system.tool.lisp")
-(defrule code-analysis-design-evolution -> :nucleus code-analysis-design-evolution/n :elaboration-additional code-analysis-design-evolution/a1)
-(defrule code-analysis-design-evolution/n -> :instruction "最初に検討した方式と、その不足を 1 文で書く" :sample "The initial approach considered building custom AST-based analysis using tree-sitter grammars.")
-(defrule code-analysis-design-evolution/a1 -> :instruction "言語サーバ方式の利点を 1 文で書く" :sample "LSP integration leverages a mature ecosystem where each language server is maintained by domain experts, and the on-demand server lifecycle ensures that resource consumption scales with actual usage rather than the number of supported languages.")
+(defrule changes -> :instruction "解析の方式が経た転換を、1 行に 1 つ、置き換えた設計の名前で挙げる" :frame "opendev.design-change.lisp")

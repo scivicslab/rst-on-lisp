@@ -1,38 +1,24 @@
 ;;; subject: opendev-terminal-agent-2603 2.1 Overview (2 System Architecture): how one terminal coding agent is divided into layers, from the entry point to the files it keeps, with the safety measures that cut across them
-;;; made-from: doc_Base012/docs/Papers-AgentHarness/opendev-terminal-agent/02_agent-core/02_agent-core.lisp / s1 .. s6
-;;; members: layers frontend agent tool-context persistence safety roadmap
-;;; children (:include / :frame, in the text's order): agent-core opendev.agent-core.lisp, context-engineering opendev.context-engineering.lisp, tool-system opendev.tool-system.lisp, persistence-layer opendev.persistence.lisp
+;;; made-from: doc_Base012/docs/Papers-AgentHarness/opendev-terminal-agent/02_agent-core/02_agent-core.lisp / p-architecture-layers p-entry-and-frontends p-agent-layer-parts p-tool-and-context-parts p-persistence-stores p-safety-need p-overview-roadmap
+;;; members: architecture safety roadmap
+;;; children (:include / :frame, in the text's order): layers (each item one copy of opendev.layer.lisp), agent-core opendev.agent-core.lisp, context-engineering opendev.context-engineering.lisp, tool-system opendev.tool-system.lisp, persistence-layer opendev.persistence.lisp
 ;;; elsewhere: none
-;;; left-out: the captions of Figures 2 and 3 are not part of the text copy (figures are not copied)
+;;; left-out: the captions of Figures 2 and 3 (figures are not copied)
 (in-package :rst)
 (defdocument OpenDevFrame)
 
 (defrule document -> title sections)
 (defrule title -> :instruction "説明する、端末で動くコーディングエージェントの全体像の題を書く")
 (defrule sections -> s1)
-(defrule s1 -> opendev-layers opendev-frontend opendev-agent opendev-tool-context opendev-persistence opendev-safety opendev-roadmap agent-core context-engineering tool-system persistence-layer :heading "## System architecture")
-(defrule opendev-layers -> :nucleus opendev-layers/n :elaboration-additional opendev-layers/a1)
-(defrule opendev-layers/n -> :instruction "システムが何層から成り、各層の名前を 1 文で書く" :sample "Figure 2 illustrates the architecture of OpenDev across four principal layers: Entry & UI, Agent, Tool & Context, and Persistence.")
-(defrule opendev-layers/a1 -> :instruction "利用者の問い合わせが層をどの順に通るかを 1 文で書く" :sample "A user query flows through this pipeline sequentially, from the entry point through agent reasoning and tool execution, before results are persisted and rendered.")
-(defrule opendev-frontend -> :nucleus opendev-frontend/n :elaboration-additional opendev-frontend/a1 :elaboration-additional opendev-frontend/a2)
-(defrule opendev-frontend/n -> :instruction "入口が何を起動し、どの管理部品を下流へ渡すかを 1 文で書く" :sample "The CLI Entry Point parses arguments and bootstraps four shared managers (ConfigManager, SessionManager, ModeManager, and ApprovalManager), which are injected into all downstream components.")
-(defrule opendev-frontend/a1 -> :instruction "画面の種類とそれぞれの承認の取り方を 1 文で書く" :sample "OpenDev supports two frontends: a TUI built on Textual using blocking modal approvals, and a Web UI backed by FastAPI and WebSockets using asynchronous polling approvals.")
-(defrule opendev-frontend/a2 -> :instruction "二つの画面が共通に満たす約束と、それで何が保たれるかを 1 文で書く" :sample "Both implement a shared UICallback contract, keeping the agent layer UI-agnostic.")
-(defrule opendev-agent -> :nucleus opendev-agent/n :elaboration-additional opendev-agent/a1 :elaboration-additional opendev-agent/a2)
-(defrule opendev-agent/n -> :instruction "モデルの役割の数と、その初期化の仕方を 1 文で書く" :sample "OpenDev assigns five specialized model roles to distinct LLMs (Section 2.2.5), each lazily initialized and informed by a locally cached capability registry.")
-(defrule opendev-agent/a1 -> :instruction "動作の二つのモードを 1 文で書く" :sample "The system operates in two modes: Normal Mode with full read-write tool access for execution, and Plan Mode restricted to read-only tools for safe planning (Section 2.2).")
-(defrule opendev-agent/a2 -> :instruction "推論がどんなループで、1 ターンに何段階かを 1 文で書く" :sample "Reasoning proceeds through the Extended ReAct Loop (Section 2.2.6), which runs four phases per turn: automatic context compaction when the token budget nears exhaustion; an optional thinking phase for pre-action reasoning at configurable depth; an optional self-critique phase; and the standard Reason-Act-Execute-Observe action phase.")
-(defrule opendev-tool-context -> :nucleus opendev-tool-context/n :elaboration-additional opendev-tool-context/a1 :elaboration-additional opendev-tool-context/a2)
-(defrule opendev-tool-context/n -> :instruction "道具の層の中心になる部品と、何を取りまとめるかを 1 文で書く" :sample "The Tool Execution Layer is built around a ToolRegistry that dispatches calls to typed handlers covering file operations, process execution, and web access, with support for batch parallel execution and on-demand MCP tool discovery (Section 2.4.7).")
-(defrule opendev-tool-context/a1 -> :instruction "再利用できる指示書をどう取り込むかを 1 文で書く" :sample "A Skills system lazily injects reusable, domain-specific prompt templates from a three-tier hierarchy (built-in, project, user).")
-(defrule opendev-tool-context/a2 -> :instruction "文脈の層を構成する部品を挙げて 1 文で書く" :sample "The Context Engineering Layer manages the LLM context window through four subsystems: System Reminders (Section 2.3.4) for context-aware behavioral guidance, Prompt Composer for modular system-prompt assembly, Memory for cross-session continuity, and Compaction (Section 2.3.6) for reclaiming token budget.")
-(defrule opendev-persistence -> :nucleus opendev-persistence/n)
-(defrule opendev-persistence/n -> :instruction "状態を保つ置き場を数と種類で挙げて 1 文で書く" :sample "OpenDev persists state across four stores: a Config Manager that resolves settings through a project-local, user-global, environment-variable, and built-in default hierarchy; a Session Manager that saves full conversation histories as JSON; a Provider Cache that stores model capability metadata locally; and an operation log that tracks file changes for rollback.")
-(defrule opendev-safety -> :nucleus opendev-safety/n :elaboration-additional opendev-safety/a1)
-(defrule opendev-safety/n -> :instruction "安全の仕組みを 1 つに頼れない理由を 1 文で書く" :sample "Because the agent can execute arbitrary shell commands, overwrite files, and spawn persistent processes, a single safety mechanism is insufficient.")
-(defrule opendev-safety/a1 -> :instruction "採った構えと、その層の数、各層の独立性を 1 文で書く" :sample "OpenDev therefore employs a defense-in-depth architecture with five independent safety layers (Figure 3), each designed to prevent a class of harm independently so that no single point of failure compromises the system.")
-(defrule opendev-roadmap -> :nucleus opendev-roadmap/n)
-(defrule opendev-roadmap/n -> :instruction "この概観の後、各層を詳しくどの順に見ていくかを 1 文で書く" :sample "Having established the four-layer overview, we now examine each layer in detail, beginning with the agent core that implements the reasoning loop driving all agent behavior.")
+(defrule s1 -> opendev-architecture layers opendev-safety opendev-roadmap agent-core context-engineering tool-system persistence-layer :heading "## System architecture")
+(defrule opendev-architecture -> :nucleus opendev-architecture/layers :elaboration-object-attribute opendev-architecture/flow)
+(defrule opendev-architecture/layers -> :instruction "システムが何層から成り、各層が何かを 1 文で書く" :sample "Figure 2 illustrates the architecture of OpenDev across four principal layers: Entry & UI, Agent, Tool & Context, and Persistence.")
+(defrule opendev-architecture/flow -> :instruction "層をまたぐ処理の流れの性質を 1 文で書く" :sample "A user query flows through this pipeline sequentially, from the entry point through agent reasoning and tool execution, before results are persisted and rendered.")
+(defrule layers -> :instruction "層を、処理の流れの順に、1 行に 1 つ層の名前で挙げる" :frame "opendev.layer.lisp")
+(defrule opendev-safety -> :reason opendev-safety/need :nucleus opendev-safety/stance)
+(defrule opendev-safety/need -> :instruction "安全の仕組みを 1 つに頼れない理由を 1 文で書く" :sample "Because the agent can execute arbitrary shell commands, overwrite files, and spawn persistent processes, a single safety mechanism is insufficient.")
+(defrule opendev-safety/stance -> :instruction "採る安全の構えと、独立した層の数を 1 文で書く" :sample "OpenDev therefore employs a defense-in-depth architecture with five independent safety layers (Figure 3), each designed to prevent a class of harm independently so that no single point of failure compromises the system.")
+(defrule opendev-roadmap -> :instruction "この概観の後、各層を詳しくどの順に見ていくかを 1 文で書く" :sample "Having established the four-layer overview, we now examine each layer in detail, beginning with the agent core that implements the reasoning loop driving all agent behavior.")
 (defrule agent-core -> :instruction "エージェントの核の層を説明する" :include "opendev.agent-core.lisp" :heading "## Agent core layer")
 (defrule context-engineering -> :instruction "モデルが見る文脈を管理する層を説明する" :include "opendev.context-engineering.lisp" :heading "## Context engineering layer")
 (defrule tool-system -> :instruction "エージェントが使う道具の層を説明する" :include "opendev.tool-system.lisp" :heading "## Tool system")

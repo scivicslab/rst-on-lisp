@@ -1,27 +1,16 @@
 ;;; subject: opendev-terminal-agent-2603 2.4.2 File Operations: the five tools that read, create, edit, list and search files, with the checks that keep the agent from damaging files by stale or inexact edits
-;;; made-from: doc_Base012/docs/Papers-AgentHarness/opendev-terminal-agent/04_tool-system/04_tool-system.lisp / s6 .. s12
-;;; members: overview edit-matching edit-safety design-evolution
-;;; children (:include / :frame, in the text's order): tools (each item one copy of opendev.tool-system.tool.lisp)
+;;; made-from: doc_Base012/docs/Papers-AgentHarness/opendev-terminal-agent/04_tool-system/04_tool-system.lisp / p-file-tools p-read-file p-write-file p-edit-content-drift p-edit-replacer-chain p-edit-safety-checks p-list-files p-search-tool p-edit-evolution
+;;; members: overview edit-matching edit-safety
+;;; children (:include / :frame, in the text's order): tools (each item one copy of opendev.tool-system.tool.lisp), changes (each item one copy of opendev.design-change.lisp)
 ;;; elsewhere: none
 ;;; left-out: none
-(defrule file-operations -> file-operations-overview tools file-operations-edit-matching file-operations-edit-safety file-operations-design-evolution)
-(defrule file-operations-overview -> :nucleus file-operations-overview/n)
-(defrule file-operations-overview/n -> :instruction "ファイル操作の道具の数と、それらが担う役割を 1 文で書く" :sample "Five tools handle all file-system interactions (see File Ops category in Table 1), from reading and writing to structured editing and searching.")
+(defrule file-operations -> file-operations-overview tools file-operations-edit-matching file-operations-edit-safety changes)
+(defrule file-operations-overview -> :instruction "ファイル操作の道具の数と役割を 1 文で書く" :sample "Five tools handle all file-system interactions (see File Ops category in Table 1), from reading and writing to structured editing and searching.")
 (defrule tools -> :instruction "道具を、1 行に 1 つ道具の名前で挙げる" :frame "opendev.tool-system.tool.lisp")
-(defrule file-operations-edit-matching -> :nucleus file-operations-edit-matching/n :elaboration-additional file-operations-edit-matching/a1 :elaboration-additional file-operations-edit-matching/a2 :elaboration-additional file-operations-edit-matching/a3 :elaboration-additional file-operations-edit-matching/a4)
-(defrule file-operations-edit-matching/n -> :instruction "モデルが書く置換前の文字列が実物とずれる問題を 1 文で書く" :sample "When an LLM-based agent edits a file, it specifies old_content to find and new_content to replace.")
-(defrule file-operations-edit-matching/a1 -> :instruction "厳密な一致だけの道具が失敗する様子を 1 文で書く" :sample "A strict exact-match edit tool fails on these cases, producing “content not found” errors that consume context with error messages and recovery attempts.")
-(defrule file-operations-edit-matching/a2 -> :instruction "責任の連鎖で九つの置換を試す設計を 1 文で書く" :sample "The edit tool implements a chain-of-responsibility pattern with nine replacer classes, each addressing a specific mismatch category, from exact match through whitespace normalization, indentation flexibility, escape handling, and context-aware anchor matching (Appendix D enumerates all nine passes with descriptions).")
-(defrule file-operations-edit-matching/a3 -> :instruction "一致した実物の部分を返す利点を 1 文で書く" :sample "Each replacer returns the actual substring found in the original file (not the search query), so the replacement preserves the file’s original formatting.")
-(defrule file-operations-edit-matching/a4 -> :instruction "最初の一致で止める利点を 1 文で書く" :sample "The chain short-circuits on first match, so exact matches incur zero overhead from the fuzzy passes.")
-(defrule file-operations-edit-safety -> :nucleus file-operations-edit-safety/n :elaboration-additional file-operations-edit-safety/a1 :elaboration-additional file-operations-edit-safety/a2 :elaboration-additional file-operations-edit-safety/a3 :elaboration-additional file-operations-edit-safety/a4 :elaboration-additional file-operations-edit-safety/a5)
-(defrule file-operations-edit-safety/n -> :instruction "一致の後に編集が守る安全と観測の対策を 1 文で書く" :sample "Beyond matching, the edit handler enforces several safety and observability measures.")
-(defrule file-operations-edit-safety/a1 -> :instruction "読んだ後に変わったファイルへの編集を断ることを 1 文で書く" :sample "Stale-read validation rejects edits to files modified since the agent’s last read.")
-(defrule file-operations-edit-safety/a2 -> :instruction "一意性の確認を 1 文で書く" :sample "Uniqueness verification ensures the match is unambiguous: multiple matches produce errors rather than silent mis-edits.")
-(defrule file-operations-edit-safety/a3 -> :instruction "編集後の診断を取り込む流れを 1 文で書く" :sample "After a successful edit, the handler calls lsp.touch_file(filepath) to notify the running language server of the change, then waits up to 3 seconds (debounced) for diagnostics.")
-(defrule file-operations-edit-safety/a4 -> :instruction "診断の絞り込みを 1 文で書く" :sample "Only Error-severity diagnostics are included; warnings and hints are suppressed to avoid context noise.")
-(defrule file-operations-edit-safety/a5 -> :instruction "診断を結果に添える効果を 1 文で書く" :sample "Up to 20 diagnostics are appended to the tool output as structured feedback (e.g., “ LSP errors detected: line 42: undefined variable ‘foo’ ”), giving the agent immediate feedback and enabling self-correction in the same turn.")
-(defrule file-operations-design-evolution -> :nucleus file-operations-design-evolution/n :elaboration-additional file-operations-design-evolution/a1 :elaboration-additional file-operations-design-evolution/a2)
-(defrule file-operations-design-evolution/n -> :instruction "最初の編集の道具の方式と、それが最大の失敗の原因だったことを 1 文で書く" :sample "The initial edit tool used a two-pass strategy (exact match, then whitespace-stripped match).")
-(defrule file-operations-design-evolution/a1 -> :instruction "失敗の記録の分析で分かったことを 1 文で書く" :sample "Analyzing failure logs revealed that LLM formatting drift falls into distinct, predictable categories (whitespace normalization, indentation shifts, escape sequence differences, partial-context anchoring), each addressable by a targeted matching pass.")
-(defrule file-operations-design-evolution/a2 -> :instruction "一般化した設計の効果を 1 文で書く" :sample "Generalizing this observation into a chain-of-responsibility architecture with nine progressively relaxed replacers resolved the vast majority of edit failures while preserving exact-match performance through short-circuit evaluation.")
+(defrule file-operations-edit-matching -> :background file-operations-edit-matching/drift :nucleus file-operations-edit-matching/chain)
+(defrule file-operations-edit-matching/drift -> :instruction "モデルが書く置換前の文字列が実物とずれる問題を 1 文で書く" :sample "In practice, the LLM frequently produces old_content that differs slightly from the actual file: trailing whitespace variations, indentation mismatches, escape sequence differences, or minor reformatting from reconstructing code from memory rather than verbatim copy.")
+(defrule file-operations-edit-matching/chain -> :instruction "ずれを許す一致の仕組みを 1 文で書く" :sample "The edit tool implements a chain-of-responsibility pattern with nine replacer classes, each addressing a specific mismatch category, from exact match through whitespace normalization, indentation flexibility, escape handling, and context-aware anchor matching (Appendix D enumerates all nine passes with descriptions).")
+(defrule file-operations-edit-safety -> :nucleus file-operations-edit-safety/checks :elaboration-set-member file-operations-edit-safety/stale)
+(defrule file-operations-edit-safety/checks -> :instruction "一致の後に編集が守る安全と観測の対策を 1 文で書く" :sample "Beyond matching, the edit handler enforces several safety and observability measures.")
+(defrule file-operations-edit-safety/stale -> :instruction "読んだ後に変わったファイルへの編集を断る検査を 1 文で書く" :sample "Stale-read validation rejects edits to files modified since the agent’s last read.")
+(defrule changes -> :instruction "編集の道具が経た転換を、1 行に 1 つ、置き換えた設計の名前で挙げる" :frame "opendev.design-change.lisp")
