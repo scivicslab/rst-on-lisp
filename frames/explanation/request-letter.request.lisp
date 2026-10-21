@@ -2,14 +2,16 @@
 ;;; settings in a form the receiver can copy, what to do along with it and what that is for, the conditions on it
 ;;; each with its reason, and where the steps are
 ;;; members: p-run p-run/code p-token (request 1, Vault), p-routes p-routes/list p-rules (request 2, HAProxy)
+;;; from the template: the state after the work (request/act/after) and a reason for the request as a whole (request/reason)
 ;;; the reasons are not gathered in a section of their own: each condition carries its reason in the same item
-(defrule request -> request/act request/code request/list request/also request/conditions request/steps :heading "## お願い: {item}")
+(defrule request -> request/act request/code request/list request/also request/conditions request/reason request/steps :heading "## お願い: {item}")
 ;; who does what where, after what the requester has made ready (p-run p-routes)
-(defrule request/act -> :background request/act/ready :nucleus request/act/n)
+(defrule request/act -> :background request/act/ready :nucleus request/act/n :result request/act/after)
 (defrule request/act/ready -> :instruction "頼む側がすでに用意したもの（スクリプト、ファイル）と、その置き場所を 1 文で書く。用意したものが無ければ書かない"
   :sample "<計算機> のアカウント <作業アカウント> のホームに、スクリプト ~/setup-vault.sh を置いてあります。")
 (defrule request/act/n -> :instruction "誰が（どの権限を持つ人が）、どの機械やシステムで、何をするかを、宛先を主語にして「〜してください」の形で 1 文で書く。下にコマンドや設定を示すなら「次のように」「次の」で指す"
   :sample "管理者権限の Vault トークンをお持ちの方が、<計算機> にログインして、次のように実行してください。 / https://sc.ddbj.nig.ac.jp/ を受け付ける HAProxy に、許可した送信元からの次の経路を足してください。")
+(defrule request/act/after -> :instruction "作業が終わった後に、宛先のシステムで何が成り立っているかを 1 文で書く。下のコマンドや設定から明らかなら書かない")
 ;; the command or the settings, in a form the receiver can copy (p-run/code p-routes/list)
 (defrule request/code -> :instruction "宛先が実行するコマンドを、そのまま写せる形で示す。コマンドが無ければ空にする" :kind code-block)
 (defrule request/list -> :instruction "宛先が足す設定（経路、値）を、1 項目に 1 つ、そのまま写せる形で挙げる。何のための設定かを括弧で添える。足す設定が無ければ空にする"
@@ -25,6 +27,10 @@
 (defrule request/conditions -> :instruction "このお願いに付ける条件（判定の順序、拒むときの応答、許す範囲、時間、外してほしい古い設定）を、1 項目に 1 つ、「〜してください」の形で挙げる。理由がある条件は、同じ項目に「〜ため」か括弧で理由を添える。条件が無ければ空にする"
   :sample "/pups-with-audit-auth を先に判定してください（/pups-with-audit にも一致するため）。 / 許可していない送信元には、この2つのパスだけ 403 を返してください。 / ツールの画面は WebSocket を使うため、接続が 1 時間以上切れないようにしてください。 / 以前の /pups（NodePort 31087）の経路は不要なので、外してください。"
   :kind bullet)
+;; why the request as a whole is needed and why these values, when the conditions' own reasons do not say it (from the template)
+(defrule request/reason -> :nucleus request/reason/n :elaboration-additional request/reason/values)
+(defrule request/reason/n -> :instruction "このお願い全体がなぜ要るのかを 1 文で書く。概要や条件の理由で分かるなら段落ごと書かない")
+(defrule request/reason/values -> :instruction "値をなぜそう決めたかと、宛先が変えてよい値と変えてはいけない値を 1〜2 文で書く。無ければ書かない")
 ;; where the steps are (the "(手順は添付)" of p-token)
 (defrule request/steps -> :nucleus request/steps/n :rank secondary)
 (defrule request/steps/n -> :instruction "このお願いの手順を添付の文書に分けたなら、それを指す短い文を書く。無ければ段落ごと書かない" :sample "（手順は添付）")
