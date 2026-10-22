@@ -4,20 +4,7 @@
 ;;; through with their code, the clients that start it, trying it out, and what the reader learned
 ;;; from: design.use-case.lisp (use-case), implementation.scenario.lisp (scenario), ipv4.path.lisp (path); a flow told
 ;;;       in a design has the design members, a flow told in code has the code members, and one told both ways has both
-;;; roles (role: use-case / scenario / path):
-;;;   flow/what:         use-case/seq/n / scenario/follow / path/what
-;;;   flow/parts:        - / scenario/parts / -
-;;;   flow/entries:      - / - / path/entries
-;;;   flow/mechanism:    - / - / path/mechanism
-;;;   flow/figure:       use-case/seq / scenario/follow/fig / path/figure
-;;;   flow/interactions: use-case/steps / - / -
-;;;   flow/branches:     - / - / path/branches
-;;;   flow/decisions:    use-case/details / - / -
-;;;   flow/concepts:     use-case/concepts / - / -
-;;;   flow/operations:   - / scenario/operations / path/walk
-;;;   flow/clients:      - / scenario/clients / -
-;;;   flow/try:          - / scenario/try / -
-;;;   flow/end:          - / - / path/end
+;;; links: links/explanation/explain-program.tsv (which rule of each integrated frame each rule here was made from)
 (defrule flow -> flow/what flow/parts flow/entries flow/mechanism flow/figure flow/figure/img flow/interactions flow/branches
                  flow/decisions flow/concepts flow/operations flow/clients flow/try flow/end :heading "### {item}")
 ;; what the flow does, from whose side, and in what order it is read

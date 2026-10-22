@@ -8,28 +8,7 @@
 ;;; how: the members are the union of the members of the integrated frames, not their intersection. Members with the
 ;;;      same meaning are one member here; a member only one frame has is kept. A program fills the members that apply to
 ;;;      it and leaves the others empty.
-;;; roles (role: design / implementation / ipv4; - = the frame has no such member):
-;;;   p-prev:        -                      / p-roadmap/design      / p-prev
-;;;   p-plan:        p-plan                 / p-roadmap             / p-covers
-;;;   p-what:        the-system p-system-what / -                   / p-what p-functions
-;;;   p-spec:        -                      / -                     / p-spec
-;;;   p-tasks:       -                      / -                     / p-tasks
-;;;   p-scale:       the-system p-system-scale / -                  / -
-;;;   p-easy p-new:  -                      / p-easy p-new          / -
-;;;   p-code-dirs:   -                      / p-code-dirs(-list)    / -
-;;;   p-versions:    -                      / p-versions            / -
-;;;   kind:          s-concept              / -                     / -
-;;;   data:          -                      / -                     / header, options
-;;;   hook:          -                      / -                     / initialization
-;;;   p-cases:       use-cases-of-system p-cases p-cases-plan / -   / -
-;;;   flows:         use-case               / scenario              / path (receiving, sending, forwarding)
-;;;   transforms:    -                      / -                     / packet-transform (fragmentation, defragmentation)
-;;;   deployment:    s-deploy               / -                     / -
-;;;   setting-up:    -                      / setting-up            / -
-;;;   security:      s-security             / -                     / -
-;;;   lessons:       s-lessons              / -                     / -
-;;;   summary:       -                      / -                     / summary
-;;;   quick-ref:     -                      / -                     / quick-reference
+;;; links: links/explanation/explain-program.tsv (which rule of each integrated frame each rule here was made from)
 (in-package :rst)
 (defdocument ExplainProgramFrame)
 

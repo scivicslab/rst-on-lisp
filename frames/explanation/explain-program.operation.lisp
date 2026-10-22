@@ -3,13 +3,7 @@
 ;;; piece by piece
 ;;; from: ipv4.path-method.lisp (method), implementation.service-operation.lisp (operation); the same meaning: one
 ;;;       operation of a flow, told with its code
-;;; roles (role: method / operation):
-;;;   op/what:  method/intro / operation/what
-;;;   op/built: - / operation/built
-;;;   op/where: - / operation/where
-;;;   op/steps: - / operation/steps-intro operation/steps
-;;;   op/state: - / operation/state
-;;;   op/code:  method/steps / operation/snippets
+;;; links: links/explanation/explain-program.tsv (which rule of each integrated frame each rule here was made from)
 (defrule operation -> op/what op/built op/where op/steps-intro op/steps op/state op/code :heading "#### {item}")
 ;; what it does, where it is called from, what it takes and what it returns
 (defrule op/what -> :nucleus op/what/n :elaboration-additional op/what/from :elaboration-additional op/what/params :elaboration-additional op/what/returns)
