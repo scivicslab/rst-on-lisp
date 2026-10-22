@@ -1,5 +1,5 @@
 ;;; one kind of notice the loop hands to the program that drives it: its name and what it reports, when it is emitted, what it carries, its subtypes, and what to know when reading it
-;;; roles: claude-doc: agent-loop.message-kind.lisp / opendev: - (the UI callback contract is not described by kind)
+;;; links: links/explanation/explain-agent-harness.tsv (which rule of each integrated frame each rule here was made from)
 (defrule message-kind -> :nucleus message-kind/reports :elaboration-additional message-kind/emitted :elaboration-additional message-kind/carries :elaboration-set-member message-kind/subtypes :elaboration-additional message-kind/caution)
 (defrule message-kind/reports -> :instruction "知らせの種類の名前と、それが何を伝えるものかを 1 文で書く" :sample "SystemMessage: session lifecycle events.")
 (defrule message-kind/emitted -> :instruction "それがいつ出るかを 1 文で書く。出る条件があれば条件も書く" :sample "StreamEvent: only emitted when partial messages are enabled.")

@@ -1,5 +1,5 @@
 ;;; one design decision of the harness: what was chosen, what in the harness calls for it, what was chosen against, and what the choice brings
-;;; roles: claude-doc: - / opendev: opendev.design-decision.lisp (the sample is planning delegated to a read-only subagent)
+;;; links: links/explanation/explain-agent-harness.tsv (which rule of each integrated frame each rule here was made from)
 (defrule decision -> :nucleus decision/chosen :reason decision/calls-for :comparison decision/not-chosen :result decision/brings)
 (defrule decision/chosen -> :instruction "決めた事柄の名前に続けて、何を選んだかを 1 文で書く" :sample "Rather than switching the main agent into a restricted mode via dedicated plan-management tools, OpenDev delegates planning to a first-class Planner subagent.")
 (defrule decision/calls-for -> :instruction "このハーネスのどんな事情や失敗がその選択を求めるかを 1〜2 文で書く" :sample "This was brittle: the agent sometimes failed to exit plan mode, leaving the system stuck in a read-only state requiring manual intervention.")

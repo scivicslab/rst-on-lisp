@@ -1,4 +1,4 @@
 ;;; one stage of reducing the context: its name and trigger level, what it does to the conversation, and how it differs from the neighbouring stage
-;;; roles: claude-doc: - (one automatic compaction, no stages) / opendev: opendev.context-engineering.compaction-stage.lisp
+;;; links: links/explanation/explain-agent-harness.tsv (which rule of each integrated frame each rule here was made from)
 (defrule compaction-stage -> :nucleus compaction-stage/does)
 (defrule compaction-stage/does -> :instruction "段階の名前、作動する圧力の割合、会話に行うことを書く" :sample "Stage 2.5 - Fast Pruning (85%): Before resorting to aggressive masking, a lightweight pruning pass walks backward through tool result messages. Results within a protected recency budget are preserved; older results are replaced with [pruned] markers. Unlike observation masking (which replaces with reference pointers to offloaded files), pruning is a deletion-class operation (content is discarded rather than offloaded) but it targets only outputs well beyond the recency window. This is substantially cheaper than LLM-based compaction and often reclaims enough space to avoid the more disruptive stages entirely.")

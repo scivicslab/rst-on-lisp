@@ -1,5 +1,5 @@
 ;;; one phase of the harness loop's repeated cycle: what the phase does and under what condition, what it produces, why it is built that way, what its user can adjust, what it hands to the next phase, and the merit of its method
-;;; roles: claude-doc: - (the cycle is told as steps of a run, not as phases) / opendev: opendev.agent-core.react-loop.phase.lisp (the sample is the thinking phase, the fullest instance)
+;;; links: links/explanation/explain-agent-harness.tsv (which rule of each integrated frame each rule here was made from)
 (defrule phase -> :nucleus phase/does :elaboration-object-attribute phase/product :reason phase/reasoning :elaboration-object-attribute phase/controls :elaboration-process-step phase/handoff :evaluation-s phase/merit)
 (defrule phase/does -> :instruction "段階の名前と、そこで行うこと、行う条件を 1 文で書く" :sample "If thinking mode is enabled, the executor calls a separate thinking LLM with a tool-free copy of the conversation.")
 (defrule phase/product -> :instruction "段階が作り出すものと、その性質を 1 文で書く。作り出すものが無ければ空にする" :sample "This model produces a reasoning trace (a structured analysis of the current situation, potential approaches, and risks) without access to tools, so it cannot take premature action.")

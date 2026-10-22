@@ -47,45 +47,7 @@
 ;;;      meaning are one member here; a member only one frame has is kept. A harness fills the members that apply to it and
 ;;;      leaves the others empty. Instructions speak of "the harness" in general; each :sample is the fullest verbatim
 ;;;      instance from the sources.
-;;; roles (role: claude-doc / opendev; - = the source has no such member)
-;;;   orientation:        agent-loop p-intro                        / opendev p-overview-roadmap
-;;;   what:               agent-loop p-cycle                        / agent-core perspectives (harness defined and set against scaffolding)
-;;;   request-path:       agent-loop glance-steps                   / lifecycle (entry-paths, iteration, termination)
-;;;   entry-paths:        -                                         / lifecycle entry-paths
-;;;   executor-and-setup: -                                         / react-loop loop-executor loop-query-setup
-;;;   phases:             -                                         / react-loop phases (one copy of the phase sub-frame each)
-;;;   thinking-split:     -                                         / react-loop loop-purpose
-;;;   tool-branch:        -                                         / react-loop loop-branch
-;;;   stuck-loop:         -                                         / react-loop loop-repeat-handling
-;;;   run-ends:           agent-loop result (subtypes)              / react-loop loop-ending-paths loop-premature-end-guard
-;;;   limits-part:        agent-loop limits                         / react-loop loop-ending-paths (the iteration cap)
-;;;   concrete-turns:     agent-loop turns-example                  / -
-;;;   messages-part:      agent-loop message-kinds                  / -
-;;;   result-part:        agent-loop result                         / -
-;;;   models-part:        agent-loop control (p-model), effort      / multi-model (roles, decisions), react-loop phase controls (depth levels)
-;;;   structure-part:     -                                         / opendev (layers), agent-core, scaffolding, runtime (decisions)
-;;;   tools-part:         agent-loop tool-execution (parallel)      / tool-system (all), tool-result, retrieval
-;;;   deferred-schemas:   agent-loop context-window efficiency, context-source (MCP, tool definitions) / external-tools
-;;;   skills-part:        agent-loop context-source (skill descriptions) / delegation (skills), tool-system.skill-phase
-;;;   context-part:       agent-loop context-window                 / context-engineering (all)
-;;;   window:             agent-loop context-window p-context-what, p-consumes-note / context-engineering p-context-layer-defined
-;;;   context-sources:    agent-loop sources                        / prompt-construction (tiers), retrieval (assembly)
-;;;   compaction-part:    agent-loop compaction                     / compaction (stages, artifact index), react-loop phase (context management)
-;;;   context-saving:     agent-loop efficiency                     / tool-result, dual-memory, retrieval (explorer)
-;;;   control-part:       agent-loop permission-mode, tool-execution (permissions), hooks / registry (approval), lifecycle (hooks, mechanisms), repl-dispatch, runtime (planning)
-;;;   approval-part:      agent-loop permission-mode                / registry p-approval-gate (autonomy levels)
-;;;   call-policies-part: agent-loop tool-execution permissions     / registry p-approval-gate, p-approval-persistence
-;;;   hooks-part:         agent-loop hooks                          / lifecycle p-lifecycle-hooks, registry p-tool-lifecycle-hooks
-;;;   plan-then-act:      agent-loop permission-mode ("plan")       / runtime (planner-stages, plan-review, replanning)
-;;;   slash-commands:     -                                         / repl-dispatch
-;;;   mechanisms:         -                                         / lifecycle (interrupt, injection queue, cost)
-;;;   usage-part:         agent-loop result (usage, cost)           / lifecycle p-cost-tracking
-;;;   delegation-part:    agent-loop context-window (subagents)     / subagents
-;;;   session-part:       agent-loop session                        / sessions, operation-log, configuration, model-cache
-;;;   configuration-part: -                                         / configuration
-;;;   model-facts-part:   -                                         / model-cache
-;;;   history-part:       -                                         / design-change items of every OpenDev node
-;;;   decisions (model-decisions structure-decisions tool-decisions context-decisions control-decisions delegation-decisions session-decisions): - / the paragraphs listed under `moved into design-decision items` in the OpenDev frames
+;;; links: links/explanation/explain-agent-harness.tsv (which rule of each integrated frame each rule here was made from)
 (in-package :rst)
 (defdocument ExplainAgentHarnessFrame)
 
