@@ -1,0 +1,18 @@
+# a_file	a_rule	b_file	b_rule	kind
+# explain-data-type and the concrete frames it integrates: which rule of each concrete frame each of its rules was made from.
+# Moved from the ;;; roles: table of explain-data-type.lisp (FrameLinks_261022_oo01).
+explanation/explain-data-type.lisp	p-what	subject/data-types/integer-types.lisp	p-what	integrates
+explanation/explain-data-type.lisp	p-what	subject/data-types/floating-point-types.lisp	p-what	integrates
+explanation/explain-data-type.lisp	p-table	subject/data-types/integer-types.lisp	p-table	integrates
+explanation/explain-data-type.lisp	p-table	subject/data-types/floating-point-types.lisp	p-table	integrates
+explanation/explain-data-type.lisp	p-which	subject/data-types/integer-types.lisp	p-which	integrates
+explanation/explain-data-type.lisp	p-which	subject/data-types/floating-point-types.lisp	p-which	integrates
+explanation/explain-data-type.lisp	p-literals	subject/data-types/integer-types.lisp	p-literals	integrates
+explanation/explain-data-type.lisp	p-literals	subject/data-types/floating-point-types.lisp	p-literals	integrates
+explanation/explain-data-type.lisp	p-guarantee	subject/data-types/integer-types.lisp	p-fixed	integrates
+explanation/explain-data-type.lisp	p-guarantee	subject/data-types/floating-point-types.lisp	p-rules	integrates
+explanation/explain-data-type.lisp	p-limit	subject/data-types/integer-types.lisp	p-lacks	integrates
+explanation/explain-data-type.lisp	p-limit	subject/data-types/floating-point-types.lisp	p-unfit	integrates
+explanation/explain-data-type.lisp	p-pitfalls	subject/data-types/floating-point-types.lisp	p-pitfalls	integrates
+explanation/explain-data-type.lisp	p-new	subject/data-types/floating-point-types.lisp	p-new	integrates
+explanation/explain-data-type.pitfall.lisp	pitfall	subject/data-types/floating-point-types.pitfall.lisp	pitfall	integrates

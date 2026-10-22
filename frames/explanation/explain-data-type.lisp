@@ -2,15 +2,7 @@
 ;;;      its values, what the reader can count on, what it cannot do, and the tests that go wrong.
 ;;; integrates: subject/data-types/integer-types.lisp
 ;;; integrates: subject/data-types/floating-point-types.lisp
-;;; roles (role: integer-types / floating-point-types):
-;;;   p-what:      p-what / p-what
-;;;   p-table:     p-table / p-table
-;;;   p-which:     p-which / p-which
-;;;   p-literals:  p-literals / p-literals
-;;;   p-guarantee: p-fixed (ranges do not depend on the machine) / p-rules (computations follow IEEE 754)
-;;;   p-limit:     p-lacks (no unsigned types) / p-unfit (no exact decimal fractions)
-;;;   p-pitfalls:  - / p-pitfalls
-;;;   p-new:       - / p-new
+;;; links: links/explanation/explain-data-type.tsv (which rule of each integrated frame each rule here was made from)
 (in-package :rst)
 (defdocument ExplainDataTypeFrame)
 
