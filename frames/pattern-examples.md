@@ -11,13 +11,15 @@ it, and why.
    b2 | part | identity
    Why: you cannot say "behavior is an object"; behavior, state and identity are what every object has.
 
-2. A block that introduces C and then takes up one kind of it is that kind.
+2. A block that says several things gets a line for each. Do not choose the main one.
    Section "3.2. Comments", C = comment.
    [b1] Comments in Java do not show up in the executable program. Java has three ways of marking comments. The most
    common form is a //. Use this for a comment that runs from the // to the end of the line.
    Answer:
+   b1 | aspect | definition
    b1 | kind | end-of-line comment (//)
-   Why: the block's main matter is the // comment, one of the three kinds; the first sentences only lead up to it.
+   Why: the block says what a comment is, and then takes up the // comment, one of the three kinds. Both go into the
+   frame of comment: the definition as one of its items, the // comment as one of its kinds.
 
 3. A block about C as a whole is an aspect of C, never a kind of C. Do not write C itself as a kind.
    Section "3.3.1. Integer Types", C = integer type.
